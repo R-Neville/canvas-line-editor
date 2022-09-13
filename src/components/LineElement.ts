@@ -150,6 +150,7 @@ class LineElement extends HTMLCanvasElement {
   }
 
   private clear() {
+    this._selectionStart = this._selectionEnd = 0;
     const context = this.getContext("2d");
     if (context) {
       context.clearRect(0, 0, this.width, this.height);
@@ -262,22 +263,21 @@ class LineElement extends HTMLCanvasElement {
   }
 
   private onClick(event: MouseEvent) {
-    if (this._selectionStart === this._selectionEnd) {
-      this.clear();
-      this.drawText();
-      const textWidth = this.textWidth();
-      const charWidth = this.charWidth();
-      const { pageX } = event;
-      const { left } = this.getBoundingClientRect();
-      const offsetX = pageX - left;
-      if (textWidth > offsetX) {
-        this.setCaretPos(Math.round(offsetX / charWidth));
-      } else {
-        this.setCaretPos(Math.round(textWidth / charWidth));
-      }
-      this.drawCaret();
-      this.dispatchLineSelected();
+    if (this._selectionStart !== this._selectionEnd) return;
+    this.clear();
+    this.drawText();
+    const textWidth = this.textWidth();
+    const charWidth = this.charWidth();
+    const { pageX } = event;
+    const { left } = this.getBoundingClientRect();
+    const offsetX = pageX - left;
+    if (textWidth > offsetX) {
+      this.setCaretPos(Math.round(offsetX / charWidth));
+    } else {
+      this.setCaretPos(Math.round(textWidth / charWidth));
     }
+    this.drawCaret();
+    this.dispatchLineSelected();
   }
 
   // Helper methods:

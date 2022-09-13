@@ -283,18 +283,25 @@ class TextArea extends HTMLElement {
   }
 
   private onMouseDown(event: MouseEvent) {
+    if (event.target === this) return;
     const { pageX: initPageX } = event;
     const lineElement = event.target as LineElement;
     const lineX = lineElement.getBoundingClientRect().left;
-    const selectionStart = Math.round(
+    let selectionStart = Math.round(
       (initPageX - lineX) / lineElement.charWidth()
     );
+    if (selectionStart > lineElement.text.length) {
+      selectionStart = lineElement.text.length;
+    }
     let selectionEnd = selectionStart;
 
     const onMouseMove = (event: MouseEvent) => {
+      if (event.target === this) return;
       const { pageX } = event;
       selectionEnd = Math.round((pageX - lineX) / lineElement.charWidth());
-      lineElement.drawSelection(selectionStart, selectionEnd);
+      if (selectionEnd <= lineElement.text.length) {
+        lineElement.drawSelection(selectionStart, selectionEnd);
+      }
     }
 
     const onMouseUp = () => {
