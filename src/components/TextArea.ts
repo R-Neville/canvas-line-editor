@@ -29,10 +29,7 @@ class TextArea extends HTMLElement {
       backgroundColor: "inherit",
     } as CSSStyleDeclaration);
 
-    this.addEventListener(
-      "no-line-selected",
-      this.onNoLineSelected
-    );
+    this.addEventListener("no-line-selected", this.onNoLineSelected);
     this.addEventListener(
       "line-selected",
       this.onLineSelected as EventListener
@@ -234,12 +231,8 @@ class TextArea extends HTMLElement {
       const newLineStart = lineStart - 1;
       const lineAbove = this._lineElements[newLineStart];
       let newColStart = colStart;
-      if (
-        lineAbove &&
-        lineAbove.textContent &&
-        lineAbove.textContent.length < colStart
-      ) {
-        newColStart = lineAbove.textContent.length;
+      if (lineAbove && lineAbove.text.length < colStart) {
+        newColStart = lineAbove.text.length;
       }
       this.setCaret(newLineStart, newColStart);
       lineAbove.focusAt(newColStart);
@@ -254,12 +247,8 @@ class TextArea extends HTMLElement {
       const newLineStart = lineStart + 1;
       const lineBelow = this._lineElements[newLineStart];
       let newColStart = colStart;
-      if (
-        lineBelow &&
-        lineBelow.textContent &&
-        lineBelow.textContent.length < colStart
-      ) {
-        newColStart = lineBelow.textContent.length;
+      if (lineBelow && lineBelow.text.length < colStart) {
+        newColStart = lineBelow.text.length;
       }
       this.setCaret(newLineStart, newColStart);
       lineBelow.focusAt(newColStart);

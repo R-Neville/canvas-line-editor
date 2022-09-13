@@ -7,19 +7,18 @@ class LineElement extends HTMLCanvasElement {
   private _text: string;
   private _caretPos: number;
   private _textArea: TextArea;
+  private _focused: boolean;
 
   constructor(parent: TextArea, text: string, theme: ComponentTheme) {
     super();
 
     this._textArea = parent;
-    this._text = "";
+    this._text = text;
     this._caretPos = 0;
     this._theme = theme;
     this.height = 18;
     this.tabIndex = 0;
-
-    this.updateText(text);
-    this.drawText();
+    this._focused = false;
 
     applyStyles(this, {
       display: "block",
@@ -38,7 +37,19 @@ class LineElement extends HTMLCanvasElement {
 
   connectedCallback() {
     this.width = this._textArea.getBoundingClientRect().width;
-    this.drawText();
+    this.refresh();
+    const observer = new ResizeObserver((entries) => {
+      const { width } = this._textArea.getBoundingClientRect();
+      if (this.textWidth() < width) {
+        this.clear();
+        this.width = width;
+        this.drawText();
+        if (this._focused) {
+          this.drawCaret();
+        }
+      }
+    });
+    observer.observe(this._textArea);
   }
 
   get text() {
@@ -54,21 +65,18 @@ class LineElement extends HTMLCanvasElement {
 
   focusAt(index: number) {
     this.focus();
-    this.clear();
     this.setCaretPos(index);
-    this.drawText();
+    this.refresh();
     this.drawCaret();
   }
 
   appendText(text: string) {
     this._text += text;
-    const context = this.getContext("2d");
-    if (context) {
-      context.textBaseline = "middle";
-      context.font = "normal 14px monospace";
-      context.fillStyle = this._theme.fg;
-      context.fillText(this._text, 2, this.height / 2 + 1);
-    }
+  }
+
+  refresh() {
+    this.clear();
+    this.drawText();
   }
 
   updateText(text: string) {
@@ -96,7 +104,7 @@ class LineElement extends HTMLCanvasElement {
     }
   }
 
-  private getCharWidth() {
+  private charWidth() {
     const context = this.getContext("2d");
     if (context) {
       context.font = `normal ${this.fontSize()}px monospace`;
@@ -105,15 +113,15 @@ class LineElement extends HTMLCanvasElement {
     return 0;
   }
 
-  private getTextWidth() {
-    return this.getCharWidth() * this._text.length;
+  private textWidth() {
+    return this.charWidth() * this._text.length;
   }
 
   private drawCaret() {
     const context = this.getContext("2d");
     if (context) {
       context.beginPath();
-      const x = this.getCaretPos() * this.getCharWidth() + 2;
+      const x = this.getCaretPos() * this.charWidth() + 2;
       context.moveTo(x, 0);
       context.lineTo(x, this.height);
       context.lineWidth = 2;
@@ -133,12 +141,14 @@ class LineElement extends HTMLCanvasElement {
   // Event handlers:
 
   private onFocus() {
+    this._focused = true;
     applyStyles(this, {
       backgroundColor: this._theme.highlightBg,
     } as CSSStyleDeclaration);
   }
 
   private onBlur() {
+    this._focused = false;
     this.clear();
     this.drawText();
     applyStyles(this, {
@@ -213,8 +223,8 @@ class LineElement extends HTMLCanvasElement {
   private onClick(event: MouseEvent) {
     this.clear();
     this.drawText();
-    const textWidth = this.getTextWidth();
-    const charWidth = this.getCharWidth();
+    const textWidth = this.textWidth();
+    const charWidth = this.charWidth();
     const { pageX } = event;
     const { left } = this.getBoundingClientRect();
     const offsetX = pageX - left;
