@@ -33,7 +33,7 @@ class LineElement extends HTMLCanvasElement {
     this.addEventListener("blur", this.onBlur);
     this.addEventListener("focus", this.onFocus);
     this.addEventListener("keydown", this.onKeyDown as EventListener);
-    this.addEventListener("click", this.onClick as EventListener);
+    this.addEventListener("mousedown", this.onMouseDown);
   }
 
   connectedCallback() {
@@ -105,14 +105,21 @@ class LineElement extends HTMLCanvasElement {
     return 0;
   }
 
+  selection() {
+    return {
+      start: this._selectionStart,
+      end: this._selectionEnd,
+    };
+  }
+
   drawSelection(start: number, end: number) {
+    this.clear();
     this._selectionStart = start;
     this._selectionEnd = end;
-    this.clear();
     this.drawText();
     const context = this.getContext("2d");
     if (context) {
-      context.fillStyle = this._theme.fg + "99";
+      context.fillStyle = this._theme.fg + "55";
       context.fillRect(
         2 + start * this.charWidth(),
         0,
@@ -262,22 +269,32 @@ class LineElement extends HTMLCanvasElement {
     }
   }
 
-  private onClick(event: MouseEvent) {
-    if (this._selectionStart !== this._selectionEnd) return;
-    this.clear();
-    this.drawText();
-    const textWidth = this.textWidth();
-    const charWidth = this.charWidth();
-    const { pageX } = event;
-    const { left } = this.getBoundingClientRect();
-    const offsetX = pageX - left;
-    if (textWidth > offsetX) {
-      this.setCaretPos(Math.round(offsetX / charWidth));
-    } else {
-      this.setCaretPos(Math.round(textWidth / charWidth));
-    }
-    this.drawCaret();
-    this.dispatchLineSelected();
+  private onMouseDown() {
+    const downTime = new Date();
+
+    const onMouseUp = (event: MouseEvent) => {
+      const upTime = new Date();
+      document.removeEventListener("mouseup", onMouseUp);
+      const diff = upTime.getTime() - downTime.getTime();
+      if (diff < 400) {
+        this.clear();
+        this.drawText();
+        const textWidth = this.textWidth();
+        const charWidth = this.charWidth();
+        const { pageX } = event;
+        const { left } = this.getBoundingClientRect();
+        const offsetX = pageX - left;
+        if (textWidth > offsetX) {
+          this.setCaretPos(Math.round(offsetX / charWidth));
+        } else {
+          this.setCaretPos(Math.round(textWidth / charWidth));
+        }
+        this.drawCaret();
+        this.dispatchLineSelected();
+      }
+    };
+
+    this.addEventListener("mouseup", onMouseUp);
   }
 
   // Helper methods:
