@@ -39,10 +39,18 @@ class LineElement extends HTMLCanvasElement {
     this.width = this._textArea.getBoundingClientRect().width;
     this.refresh();
     const observer = new ResizeObserver((entries) => {
+      const { scrollWidth } = this._textArea;
       const { width } = this._textArea.getBoundingClientRect();
       if (this.textWidth() < width) {
         this.clear();
         this.width = width;
+        this.drawText();
+        if (this._focused) {
+          this.drawCaret();
+        }
+      } else if (this.textWidth() < scrollWidth) {
+        this.clear();
+        this.width = scrollWidth;
         this.drawText();
         if (this._focused) {
           this.drawCaret();
@@ -79,8 +87,21 @@ class LineElement extends HTMLCanvasElement {
     this.drawText();
   }
 
-  updateText(text: string) {
+  setText(text: string) {
     this._text = text;
+  }
+
+  private update(text: string) {
+    this.clear();
+    this.setText(text);
+    const textWidth = this.textWidth();
+    if (textWidth > this.width) {
+      this.width = textWidth;
+    }
+    this.drawText();
+    if (this._focused) {
+      this.drawCaret();
+    }
   }
 
   private fontSize() {
@@ -333,11 +354,8 @@ class LineElement extends HTMLCanvasElement {
     const caretPos = this.getCaretPos();
     const newText =
       this._text.slice(0, caretPos - 1) + this._text.slice(caretPos);
-    this._text = newText; // Triggers line-changed event.
     this.setCaretPos(caretPos - 1);
-    this.clear();
-    this.drawText();
-    this.drawCaret();
+    this.update(newText);
     this.dispatchLineChanged();
   }
 
@@ -348,17 +366,14 @@ class LineElement extends HTMLCanvasElement {
     const tab = " ".repeat(4);
     const insertSpacesNum = textBeforeCaret.length % tab.length;
     if (textAfterCaret.length === 0) {
-      this.updateText(textBeforeCaret + tab);
       this.setCaretPos(caretPos + tab.length);
+      this.update(textBeforeCaret + tab);
     } else {
       const insertSpaces =
         insertSpacesNum > 0 ? " ".repeat(insertSpacesNum) : tab;
-      this.updateText(textBeforeCaret + insertSpaces + textAfterCaret);
       this.setCaretPos(caretPos + insertSpaces.length);
+      this.update(textBeforeCaret + insertSpaces + textAfterCaret);
     }
-    this.clear();
-    this.drawText();
-    this.drawCaret();
     this.dispatchLineChanged();
   }
 
@@ -367,11 +382,8 @@ class LineElement extends HTMLCanvasElement {
     const textBeforeCaret = this._text.slice(0, caretPos);
     const textAfterCaret = this._text.slice(caretPos);
     const newText = `${textBeforeCaret}${char}${textAfterCaret}`;
-    this.updateText(newText);
     this.setCaretPos(caretPos + 1);
-    this.clear();
-    this.drawText();
-    this.drawCaret();
+    this.update(newText);
     this.dispatchLineChanged();
   }
 }
