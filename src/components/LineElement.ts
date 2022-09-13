@@ -1,14 +1,17 @@
 import { applyStyles } from "../helpers";
 import ComponentTheme from "../themes/ComponentTheme";
+import TextArea from "./TextArea";
 
 class LineElement extends HTMLCanvasElement {
   private _theme: ComponentTheme;
   private _text: string;
   private _caretPos: number;
+  private _textArea: TextArea;
 
-  constructor(text: string, theme: ComponentTheme) {
+  constructor(parent: TextArea, text: string, theme: ComponentTheme) {
     super();
 
+    this._textArea = parent;
     this._text = "";
     this._caretPos = 0;
     this._theme = theme;
@@ -34,10 +37,8 @@ class LineElement extends HTMLCanvasElement {
   }
 
   connectedCallback() {
-    if (this.parentElement) {
-      this.width = this.parentElement.getBoundingClientRect().width;
-      this.drawText();
-    }
+    this.width = this._textArea.getBoundingClientRect().width;
+    this.drawText();
   }
 
   get text() {
@@ -187,11 +188,17 @@ class LineElement extends HTMLCanvasElement {
         return;
       case "Control":
         return;
+      case "CapsLock":
+        this._textArea.capsOn = !this._textArea.capsOn;
+        return;
       default:
         break;
     }
 
-    if (event.shiftKey) {
+    if (
+      (event.shiftKey && !this._textArea.capsOn) ||
+      (!event.shiftKey && this._textArea.capsOn)
+    ) {
       this.insertCharAtCaret(event.key.toUpperCase());
     } else {
       this.insertCharAtCaret(event.key);
@@ -243,10 +250,9 @@ class LineElement extends HTMLCanvasElement {
 
   private handleEnterKey() {
     const caretPos = this.getCaretPos();
-    const textBeforeCaret =
-      this.textContent && this.textContent.slice(0, caretPos);
-    const textAfterCaret = this.textContent && this.textContent.slice(caretPos);
-    this.textContent = textBeforeCaret;
+    const textBeforeCaret = this._text.slice(0, caretPos);
+    const textAfterCaret = this._text.slice(caretPos);
+    this._text = textBeforeCaret;
     const customEvent = new CustomEvent("new-line-requested", {
       bubbles: true,
       detail: {

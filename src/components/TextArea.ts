@@ -9,6 +9,7 @@ class TextArea extends HTMLElement {
   private _lineManager: LineManager;
   private _lines: string[];
   private _lineElements: LineElement[];
+  private _capsOn: boolean;
 
   constructor(theme: Theme) {
     super();
@@ -17,6 +18,7 @@ class TextArea extends HTMLElement {
     this._lineManager = new LineManager();
     this._lines = [];
     this._lineElements = [];
+    this._capsOn = false;
 
     applyStyles(this, {
       ...universalStyles,
@@ -59,6 +61,14 @@ class TextArea extends HTMLElement {
     );
   }
 
+  get capsOn() {
+    return this._capsOn;
+  }
+
+  set capsOn(value: boolean) {
+    this._capsOn = value;
+  }
+
   updateTheme(newTheme: Theme) {
     this._theme = newTheme;
     this._lineElements.forEach((el) => {
@@ -89,7 +99,7 @@ class TextArea extends HTMLElement {
   }
 
   private buildLine(text: string) {
-    const lineElement = new LineElement(text, this._theme.lineElement);
+    const lineElement = new LineElement(this, text, this._theme.lineElement);
     return lineElement;
   }
 
