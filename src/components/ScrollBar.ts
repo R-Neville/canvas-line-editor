@@ -123,19 +123,19 @@ class ScrollBar extends HTMLElement {
       this._scrollEl;
     entries.forEach((_) => {
       this.updateThumb();
-      // if (this._horizontal) {
-      //   if (scrollWidth === clientWidth) {
-      //     this.style.display = "none";
-      //   } else {
-      //     this.style.display = "flex";
-      //   }
-      // } else {
-      //   if (scrollHeight === clientHeight) {
-      //     this.style.display = "none";
-      //   } else {
-      //     this.style.display = "flex";
-      //   }
-      // }
+      if (this._horizontal) {
+        if (scrollWidth === clientWidth) {
+          this.style.display = "none";
+        } else {
+          this.style.display = "flex";
+        }
+      } else {
+        if (scrollHeight === clientHeight) {
+          this.style.display = "none";
+        } else {
+          this.style.display = "flex";
+        }
+      }
     });
   }
 

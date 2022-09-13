@@ -8,6 +8,8 @@ class LineElement extends HTMLCanvasElement {
   private _caretPos: number;
   private _textArea: TextArea;
   private _focused: boolean;
+  private _selectionStart: number;
+  private _selectionEnd: number;
 
   constructor(parent: TextArea, text: string, theme: ComponentTheme) {
     super();
@@ -16,16 +18,15 @@ class LineElement extends HTMLCanvasElement {
     this._text = text;
     this._caretPos = 0;
     this._theme = theme;
-    this.height = 18;
+    this.height = 20;
     this.tabIndex = 0;
     this._focused = false;
+    this._selectionStart = this._selectionEnd = 0;
 
     applyStyles(this, {
       display: "block",
       position: "relative",
       outline: "none",
-      borderTop: "1px solid transparent",
-      borderBottom: "1px solid transparent",
       cursor: "text",
     } as CSSStyleDeclaration);
 
@@ -91,6 +92,36 @@ class LineElement extends HTMLCanvasElement {
     this._text = text;
   }
 
+  textWidth() {
+    return this.charWidth() * this._text.length;
+  }
+
+  charWidth() {
+    const context = this.getContext("2d");
+    if (context) {
+      context.font = `normal ${this.fontSize()}px monospace`;
+      return context.measureText("0").width;
+    }
+    return 0;
+  }
+
+  drawSelection(start: number, end: number) {
+    this._selectionStart = start;
+    this._selectionEnd = end;
+    this.clear();
+    this.drawText();
+    const context = this.getContext("2d");
+    if (context) {
+      context.fillStyle = this._theme.fg + "99";
+      context.fillRect(
+        2 + start * this.charWidth(),
+        0,
+        (end - start) * this.charWidth(),
+        this.height
+      );
+    }
+  }
+
   private update(text: string) {
     this.clear();
     this.setText(text);
@@ -105,7 +136,7 @@ class LineElement extends HTMLCanvasElement {
   }
 
   private fontSize() {
-    return Math.round(this.height * 0.8);
+    return Math.round(this.height * 0.7);
   }
 
   private drawText() {
@@ -123,19 +154,6 @@ class LineElement extends HTMLCanvasElement {
     if (context) {
       context.clearRect(0, 0, this.width, this.height);
     }
-  }
-
-  private charWidth() {
-    const context = this.getContext("2d");
-    if (context) {
-      context.font = `normal ${this.fontSize()}px monospace`;
-      return context.measureText("0").width;
-    }
-    return 0;
-  }
-
-  private textWidth() {
-    return this.charWidth() * this._text.length;
   }
 
   private drawCaret() {
@@ -213,6 +231,8 @@ class LineElement extends HTMLCanvasElement {
           this.requestLineRemoval();
         } else if (caretPos === this._text.length) {
           this.deletePreviousChar();
+        } else {
+          this.deleteFollowingChar();
         }
         return;
       case "Tab":
@@ -242,20 +262,22 @@ class LineElement extends HTMLCanvasElement {
   }
 
   private onClick(event: MouseEvent) {
-    this.clear();
-    this.drawText();
-    const textWidth = this.textWidth();
-    const charWidth = this.charWidth();
-    const { pageX } = event;
-    const { left } = this.getBoundingClientRect();
-    const offsetX = pageX - left;
-    if (textWidth > offsetX) {
-      this.setCaretPos(Math.round(offsetX / charWidth));
-    } else {
-      this.setCaretPos(Math.round(textWidth / charWidth));
+    if (this._selectionStart === this._selectionEnd) {
+      this.clear();
+      this.drawText();
+      const textWidth = this.textWidth();
+      const charWidth = this.charWidth();
+      const { pageX } = event;
+      const { left } = this.getBoundingClientRect();
+      const offsetX = pageX - left;
+      if (textWidth > offsetX) {
+        this.setCaretPos(Math.round(offsetX / charWidth));
+      } else {
+        this.setCaretPos(Math.round(textWidth / charWidth));
+      }
+      this.drawCaret();
+      this.dispatchLineSelected();
     }
-    this.drawCaret();
-    this.dispatchLineSelected();
   }
 
   // Helper methods:
@@ -343,11 +365,19 @@ class LineElement extends HTMLCanvasElement {
     const appendEvent = new CustomEvent("append-text-to-previous-line", {
       bubbles: true,
       detail: {
-        text: this.textContent,
+        text: this._text,
       },
     });
     this.dispatchEvent(appendEvent);
     this.requestLineRemoval();
+  }
+
+  private deleteFollowingChar() {
+    const caretPos = this.getCaretPos();
+    const newText =
+      this._text.slice(0, caretPos) + this._text.slice(caretPos + 1);
+    this.update(newText);
+    this.dispatchLineChanged();
   }
 
   private deletePreviousChar() {

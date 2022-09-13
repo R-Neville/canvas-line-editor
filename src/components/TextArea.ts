@@ -60,6 +60,8 @@ class TextArea extends HTMLElement {
       "move-caret-right",
       this.onMoveCaretRight as EventListener
     );
+
+    this.addEventListener("mousedown", this.onMouseDown as EventListener);
   }
 
   get capsOn() {
@@ -278,6 +280,33 @@ class TextArea extends HTMLElement {
       currentLine.focusAt(newColStart);
       this.dispatchSelectionChanged();
     }
+  }
+
+  private onMouseDown(event: MouseEvent) {
+    const { pageX: initPageX } = event;
+    const lineElement = event.target as LineElement;
+    const lineX = lineElement.getBoundingClientRect().left;
+    const selectionStart = Math.round(
+      (initPageX - lineX) / lineElement.charWidth()
+    );
+    let selectionEnd = selectionStart;
+
+    const onMouseMove = (event: MouseEvent) => {
+      const { pageX } = event;
+      selectionEnd = Math.round((pageX - lineX) / lineElement.charWidth());
+      lineElement.drawSelection(selectionStart, selectionEnd);
+    }
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    }
+
+    document.addEventListener(
+      "mousemove",
+      onMouseMove as EventListener
+    );
+    document.addEventListener("mouseup", onMouseUp);
   }
 
   // Helper methods:

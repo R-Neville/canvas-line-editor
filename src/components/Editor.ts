@@ -37,6 +37,7 @@ class Editor extends HTMLElement {
       display: "grid",
       gridTemplateColumns: "1fr",
       overflow: "hidden",
+      padding: "5px",
       width: "100%",
       maxHeight: "500px",
       backgroundColor: this._theme.editor.bg,
