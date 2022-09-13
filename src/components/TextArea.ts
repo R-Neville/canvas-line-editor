@@ -30,6 +30,10 @@ class TextArea extends HTMLElement {
     } as CSSStyleDeclaration);
 
     this.addEventListener(
+      "no-line-selected",
+      this.onNoLineSelected
+    );
+    this.addEventListener(
       "line-selected",
       this.onLineSelected as EventListener
     );
@@ -142,6 +146,10 @@ class TextArea extends HTMLElement {
   }
 
   // Event handlers:
+
+  private onNoLineSelected() {
+    this.setCaret(-1, -1);
+  }
 
   private onLineSelected(event: CustomEvent) {
     event.stopPropagation();

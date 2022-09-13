@@ -54,7 +54,9 @@ class LineElement extends HTMLCanvasElement {
 
   focusAt(index: number) {
     this.focus();
+    this.clear();
     this.setCaretPos(index);
+    this.drawText();
     this.drawCaret();
   }
 
@@ -148,6 +150,9 @@ class LineElement extends HTMLCanvasElement {
     event.preventDefault();
     const caretPos = this.getCaretPos();
     switch (event.key) {
+      case "Escape":
+        this.handleEscapeKey();
+        return;
       case "Enter":
         this.handleEnterKey();
         return;
@@ -218,10 +223,7 @@ class LineElement extends HTMLCanvasElement {
     } else {
       this.setCaretPos(Math.round(textWidth / charWidth));
     }
-    console.log(this.getCaretPos());
-
     this.drawCaret();
-
     this.dispatchLineSelected();
   }
 
@@ -244,6 +246,14 @@ class LineElement extends HTMLCanvasElement {
         newColStart: this.getCaretPos(),
         newValue: this._text,
       },
+    });
+    this.dispatchEvent(customEvent);
+  }
+
+  private handleEscapeKey() {
+    this.blur();
+    const customEvent = new CustomEvent("no-line-selected", {
+      bubbles: true,
     });
     this.dispatchEvent(customEvent);
   }
@@ -278,8 +288,6 @@ class LineElement extends HTMLCanvasElement {
   }
 
   private handleArrowLeftKey() {
-    this.clear();
-    this.drawText();
     const customEvent = new CustomEvent("move-caret-left", {
       bubbles: true,
     });
@@ -287,8 +295,6 @@ class LineElement extends HTMLCanvasElement {
   }
 
   private handleArrowRightKey() {
-    this.clear();
-    this.drawText();
     const customEvent = new CustomEvent("move-caret-right", {
       bubbles: true,
     });

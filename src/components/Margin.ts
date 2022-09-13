@@ -25,7 +25,7 @@ class Margin extends HTMLElement {
 
   updateTheme(newTheme: Theme) {
     this._theme = newTheme;
-    this._lineNumbers.forEach(ln => {
+    this._lineNumbers.forEach((ln) => {
       ln.updateTheme(this._theme.lineNumber);
     });
   }
@@ -41,7 +41,9 @@ class Margin extends HTMLElement {
   updateLineNumbers(delta: number) {
     if (delta > 0) {
       do {
-        const newLineNumber = this.buildLineNumber(this._lineNumbers.length + 1);
+        const newLineNumber = this.buildLineNumber(
+          this._lineNumbers.length + 1
+        );
         this._lineNumbers.push(newLineNumber);
         this.appendChild(newLineNumber);
         delta--;
@@ -68,6 +70,12 @@ class Margin extends HTMLElement {
       if (i !== index && lineNumber.highlighted()) {
         lineNumber.unHighlight();
       }
+    });
+  }
+
+  unHighlightLineNumbers() {
+    this._lineNumbers.forEach((ln) => {
+      if (ln.highlighted()) ln.unHighlight();
     });
   }
 

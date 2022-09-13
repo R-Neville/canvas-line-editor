@@ -52,6 +52,10 @@ class Editor extends HTMLElement {
     } as CSSStyleDeclaration);
 
     this.addEventListener(
+      "no-line-selected",
+      this.onNoLineSelected as EventListener
+    );
+    this.addEventListener(
       "line-count-changed",
       this.onLineCountChanged as EventListener
     );
@@ -73,6 +77,11 @@ class Editor extends HTMLElement {
   }
 
   // Event handlers:
+
+  private onNoLineSelected(event: CustomEvent) {
+    event.stopPropagation();
+    this._margin.unHighlightLineNumbers();
+  }
 
   private onSelectionChanged(event: CustomEvent) {
     event.stopPropagation();
