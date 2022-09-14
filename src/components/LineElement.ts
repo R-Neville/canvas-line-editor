@@ -8,8 +8,7 @@ class LineElement extends HTMLCanvasElement {
   private _caretPos: number;
   private _textArea: TextArea;
   private _focused: boolean;
-  private _selectionStart: number;
-  private _selectionEnd: number;
+  private _selection: Function|null;
 
   constructor(parent: TextArea, text: string, theme: ComponentTheme) {
     super();
@@ -21,7 +20,7 @@ class LineElement extends HTMLCanvasElement {
     this.height = 20;
     this.tabIndex = 0;
     this._focused = false;
-    this._selectionStart = this._selectionEnd = 0;
+    this._selection = null;
 
     applyStyles(this, {
       display: "block",
@@ -34,6 +33,7 @@ class LineElement extends HTMLCanvasElement {
     this.addEventListener("focus", this.onFocus);
     this.addEventListener("keydown", this.onKeyDown as EventListener);
     this.addEventListener("mousedown", this.onMouseDown);
+    this.addEventListener("click", this.onClick as EventListener);
   }
 
   connectedCallback() {
@@ -86,6 +86,9 @@ class LineElement extends HTMLCanvasElement {
   refresh() {
     this.clear();
     this.drawText();
+    if (this._focused) {
+      this.drawCaret();
+    }
   }
 
   setText(text: string) {
@@ -106,16 +109,13 @@ class LineElement extends HTMLCanvasElement {
   }
 
   selection() {
-    return {
-      start: this._selectionStart,
-      end: this._selectionEnd,
-    };
+    if (this._selection) {
+      return this._selection();
+    }
   }
 
   drawSelection(start: number, end: number) {
     this.clear();
-    this._selectionStart = start;
-    this._selectionEnd = end;
     this.drawText();
     const context = this.getContext("2d");
     if (context) {
@@ -127,6 +127,13 @@ class LineElement extends HTMLCanvasElement {
         this.height
       );
     }
+  }
+
+  unHighlight() {
+    this._focused = false;
+    applyStyles(this, {
+      backgroundColor: "transparent",
+    } as CSSStyleDeclaration);
   }
 
   private update(text: string) {
@@ -157,7 +164,6 @@ class LineElement extends HTMLCanvasElement {
   }
 
   private clear() {
-    this._selectionStart = this._selectionEnd = 0;
     const context = this.getContext("2d");
     if (context) {
       context.clearRect(0, 0, this.width, this.height);
@@ -269,14 +275,13 @@ class LineElement extends HTMLCanvasElement {
     }
   }
 
-  private onMouseDown() {
-    const downTime = new Date();
+  private onClick(event: MouseEvent) {
+    event.preventDefault();
+  }
 
+  private onMouseDown() {
     const onMouseUp = (event: MouseEvent) => {
-      const upTime = new Date();
-      document.removeEventListener("mouseup", onMouseUp);
-      const diff = upTime.getTime() - downTime.getTime();
-      if (diff < 400) {
+      if (!this._textArea.selecting) {
         this.clear();
         this.drawText();
         const textWidth = this.textWidth();
@@ -290,11 +295,11 @@ class LineElement extends HTMLCanvasElement {
           this.setCaretPos(Math.round(textWidth / charWidth));
         }
         this.drawCaret();
-        this.dispatchLineSelected();
       }
+      this.removeEventListener("mouseup", onMouseUp as EventListener);
     };
-
-    this.addEventListener("mouseup", onMouseUp);
+    this.dispatchLineSelected();
+    this.addEventListener("mouseup", onMouseUp as EventListener);
   }
 
   // Helper methods:
@@ -303,7 +308,7 @@ class LineElement extends HTMLCanvasElement {
     const customEvent = new CustomEvent("line-selected", {
       bubbles: true,
       detail: {
-        charIndex: this.getCaretPos(),
+        colIndex: this.getCaretPos(),
       },
     });
     this.dispatchEvent(customEvent);
@@ -313,7 +318,7 @@ class LineElement extends HTMLCanvasElement {
     const customEvent = new CustomEvent("line-changed", {
       bubbles: true,
       detail: {
-        newColStart: this.getCaretPos(),
+        newColIndex: this.getCaretPos(),
         newValue: this._text,
       },
     });

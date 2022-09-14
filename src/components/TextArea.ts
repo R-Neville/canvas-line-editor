@@ -1,7 +1,7 @@
 import { applyStyles } from "../helpers";
 import Theme from "../themes/Theme";
 import universalStyles from "../universalStyles";
-import LineManager from "../LineManager";
+import LineManager, { LMSelection } from "../LineManager";
 import LineElement from "./LineElement";
 
 class TextArea extends HTMLElement {
@@ -10,6 +10,7 @@ class TextArea extends HTMLElement {
   private _lines: string[];
   private _lineElements: LineElement[];
   private _capsOn: boolean;
+  private _selecting: boolean;
 
   constructor(theme: Theme) {
     super();
@@ -19,6 +20,7 @@ class TextArea extends HTMLElement {
     this._lines = [];
     this._lineElements = [];
     this._capsOn = false;
+    this._selecting = false;
 
     applyStyles(this, {
       ...universalStyles,
@@ -72,6 +74,10 @@ class TextArea extends HTMLElement {
     this._capsOn = value;
   }
 
+  get selecting() {
+    return this._selecting;
+  }
+
   updateTheme(newTheme: Theme) {
     this._theme = newTheme;
     this._lineElements.forEach((el) => {
@@ -110,6 +116,61 @@ class TextArea extends HTMLElement {
     this._lineManager.updateCaretPos(line, col);
   }
 
+  private selectionStart() {
+    return this._lineManager.selectionStart;
+  }
+
+  private setSelectionStart(line?: number, col?: number) {
+    if (line === undefined || col === undefined) {
+      this._lineManager.selectionStart = null;
+    } else {
+      this._lineManager.selectionStart = {
+        line,
+        col,
+      } as LMSelection;
+    }
+  }
+
+  private selectionEnd() {
+    return this._lineManager.selectionEnd;
+  }
+
+  private setSelectionEnd(line?: number, col?: number) {
+    if (line === undefined || col === undefined) {
+      this._lineManager.selectionEnd = null;
+    } else {
+      this._lineManager.selectionEnd = {
+        line,
+        col,
+      } as LMSelection;
+    }
+  }
+
+  private clearSelection() {
+    const selectionStart = this.selectionStart();
+    const selectionEnd = this.selectionEnd();
+    if (selectionStart !== null && selectionEnd !== null) {
+      let selectedLineElements: LineElement[];
+      if (selectionStart.line < selectionEnd.line) {
+        selectedLineElements = this._lineElements.slice(
+          selectionStart.line,
+          selectionEnd.line + 1
+        );
+      } else if (selectionStart.line > selectionEnd.line) {
+        selectedLineElements = this._lineElements.slice(
+          selectionEnd.line,
+          selectionStart.line + 1
+        );
+      } else {
+        selectedLineElements = [this._lineElements[selectionStart.line]];
+      }
+      selectedLineElements.forEach((lineElement) => {
+        lineElement.refresh();
+      });
+    }
+    this.setSelectionStart();
+    this.setSelectionEnd();
+  }
   // Custom event emitting methods:
 
   private dispatchSelectionChanged() {
@@ -152,41 +213,47 @@ class TextArea extends HTMLElement {
 
   private onLineSelected(event: CustomEvent) {
     event.stopPropagation();
+    if (!this._selecting) {
+      this.clearSelection();
+    }
     const lineElement = event.target as LineElement;
-    const { charIndex } = event.detail;
+    const { colIndex } = event.detail;
     const lineIndex = this._lineElements.indexOf(lineElement);
-    this.setCaret(lineIndex, charIndex);
+    this.setCaret(lineIndex, colIndex);
     this.dispatchSelectionChanged();
   }
 
   private onLineChanged(event: CustomEvent) {
     event.stopPropagation();
+    this.clearSelection();
     const lineElement = event.target as LineElement;
-    const { newColStart, newValue } = event.detail;
+    const { newColIndex, newValue } = event.detail;
     const lineIndex = this._lineElements.indexOf(lineElement);
     this._lines[lineIndex] = newValue;
-    this.setCaret(lineIndex, newColStart);
+    this.setCaret(lineIndex, newColIndex);
     this.dispatchContentChanged(lineIndex, false);
     this.dispatchSelectionChanged();
   }
 
   private onNewLineRequested(event: CustomEvent) {
     event.stopPropagation();
+    this.clearSelection();
     const { textBeforeCaret, textAfterCaret } = event.detail;
-    const { lineStart } = this._lineManager.caret;
-    const newLineStart = lineStart + 1;
+    const { line: lineIndex } = this._lineManager.caret;
+    const newLineIndex = lineIndex + 1;
     let indentation = this.getIndentation(textBeforeCaret);
-    const newColStart = indentation.length;
-    this.addLine(indentation + textAfterCaret, newLineStart);
-    this.setCaret(newLineStart, newColStart);
-    this._lineElements[newLineStart].focusAt(newColStart);
+    const newColIndex = indentation.length;
+    this.addLine(indentation + textAfterCaret, newLineIndex);
+    this.setCaret(newLineIndex, newColIndex);
+    this._lineElements[newLineIndex].focusAt(newColIndex);
     this.dispatchLineCountChanged();
-    this.dispatchContentChanged(newLineStart, false);
+    this.dispatchContentChanged(newLineIndex, false);
     this.dispatchSelectionChanged();
   }
 
   private onLineRemovalRequested(event: CustomEvent) {
     event.stopPropagation();
+    this.clearSelection();
     const lineElement = event.target as LineElement;
     const lineIndex = this._lineElements.indexOf(lineElement);
     if (lineIndex > 0) {
@@ -197,9 +264,9 @@ class TextArea extends HTMLElement {
         this._lineManager.currentLineCount - 1;
       const newLineIndex = lineIndex - 1;
       const lineAbove = this._lineElements[newLineIndex];
-      const newColStart = lineAbove && lineAbove.text?.length;
-      this.setCaret(newLineIndex, newColStart || 0);
-      lineAbove.focusAt(newColStart || 0);
+      const newColIndex = lineAbove && lineAbove.text?.length;
+      this.setCaret(newLineIndex, newColIndex || 0);
+      lineAbove.focusAt(newColIndex || 0);
       this.dispatchLineCountChanged();
       this.dispatchContentChanged(newLineIndex, true);
       this.dispatchSelectionChanged();
@@ -208,19 +275,20 @@ class TextArea extends HTMLElement {
 
   private onAppendTextToPreviousLine(event: CustomEvent) {
     event.stopPropagation();
+    this.clearSelection();
     const lineElement = event.target as LineElement;
     const { text } = event.detail;
     const lineIndex = this._lineElements.indexOf(lineElement);
     if (lineIndex > 0) {
       const newLineIndex = lineIndex - 1;
       const previousLine = this._lineElements[newLineIndex];
-      const newColStart = previousLine && previousLine.text?.length;
+      const newColIndex = previousLine && previousLine.text?.length;
       this._lines[newLineIndex] += text;
       previousLine.appendText(text);
       this.dispatchContentChanged(newLineIndex, false);
       setTimeout(() => {
-        this.setCaret(newLineIndex, newColStart || 0);
-        previousLine.focusAt(newColStart || 0);
+        this.setCaret(newLineIndex, newColIndex || 0);
+        previousLine.focusAt(newColIndex || 0);
         this.dispatchSelectionChanged();
       });
     }
@@ -228,92 +296,187 @@ class TextArea extends HTMLElement {
 
   private onMoveCaretUp(event: CustomEvent) {
     event.stopPropagation();
-    const { lineStart, colStart } = this._lineManager.caret;
-    if (lineStart > 0) {
-      const newLineStart = lineStart - 1;
-      const lineAbove = this._lineElements[newLineStart];
-      let newColStart = colStart;
-      if (lineAbove && lineAbove.text.length < colStart) {
-        newColStart = lineAbove.text.length;
+    this.clearSelection();
+    const { line: lineIndex, col: colIndex } = this._lineManager.caret;
+    if (lineIndex > 0) {
+      const newLineIndex = lineIndex - 1;
+      const lineAbove = this._lineElements[newLineIndex];
+      let newColIndex = colIndex;
+      if (lineAbove && lineAbove.text.length < colIndex) {
+        newColIndex = lineAbove.text.length;
       }
-      this.setCaret(newLineStart, newColStart);
-      lineAbove.focusAt(newColStart);
+      this.setCaret(newLineIndex, newColIndex);
+      lineAbove.focusAt(newColIndex);
       this.dispatchSelectionChanged();
     }
   }
 
   private onMoveCaretDown(event: CustomEvent) {
     event.stopPropagation();
-    const { lineStart, colStart } = this._lineManager.caret;
-    if (lineStart < this._lineManager.currentLineCount - 1) {
-      const newLineStart = lineStart + 1;
-      const lineBelow = this._lineElements[newLineStart];
-      let newColStart = colStart;
-      if (lineBelow && lineBelow.text.length < colStart) {
-        newColStart = lineBelow.text.length;
+    this.clearSelection();
+    const { line: lineIndex, col: colIndex } = this._lineManager.caret;
+    if (lineIndex < this._lineManager.currentLineCount - 1) {
+      const newLineIndex = lineIndex + 1;
+      const lineBelow = this._lineElements[newLineIndex];
+      let newColIndex = colIndex;
+      if (lineBelow && lineBelow.text.length < colIndex) {
+        newColIndex = lineBelow.text.length;
       }
-      this.setCaret(newLineStart, newColStart);
-      lineBelow.focusAt(newColStart);
+      this.setCaret(newLineIndex, newColIndex);
+      lineBelow.focusAt(newColIndex);
       this.dispatchSelectionChanged();
     }
   }
 
   private onMoveCaretLeft(event: CustomEvent) {
     event.stopPropagation();
-    const { colStart, lineStart } = this._lineManager.caret;
-    if (colStart > 0) {
-      const newColStart = colStart - 1;
-      const currentLine = this._lineElements[lineStart];
-      this.setCaret(lineStart, newColStart);
-      currentLine.focusAt(newColStart);
+    this.clearSelection();
+    const { col: colIndex, line: lineIndex } = this._lineManager.caret;
+    if (colIndex > 0) {
+      const newColIndex = colIndex - 1;
+      const currentLine = this._lineElements[lineIndex];
+      this.setCaret(lineIndex, newColIndex);
+      currentLine.focusAt(newColIndex);
       this.dispatchSelectionChanged();
     }
   }
 
   private onMoveCaretRight(event: CustomEvent) {
     event.stopPropagation();
-    const { colStart, lineStart } = this._lineManager.caret;
-    const currentLine = this._lineElements[lineStart];
-    if (currentLine.text && colStart < currentLine.text.length) {
-      const newColStart = colStart + 1;
-      this.setCaret(lineStart, newColStart);
-      currentLine.focusAt(newColStart);
+    this.clearSelection();
+    const { col: colIndex, line: lineIndex } = this._lineManager.caret;
+    const currentLine = this._lineElements[lineIndex];
+    if (currentLine.text && colIndex < currentLine.text.length) {
+      const newColIndex = colIndex + 1;
+      this.setCaret(lineIndex, newColIndex);
+      currentLine.focusAt(newColIndex);
       this.dispatchSelectionChanged();
     }
   }
 
   private onMouseDown(event: MouseEvent) {
-    if (event.target === this) return;
-    const { pageX: initPageX } = event;
-    const lineElement = event.target as LineElement;
-    const lineX = lineElement.getBoundingClientRect().left;
-    let selectionStart = Math.round(
-      (initPageX - lineX) / lineElement.charWidth()
-    );
-    if (selectionStart > lineElement.text.length) {
-      selectionStart = lineElement.text.length;
+    if (event.target === this) {
+      this.clearSelection();
+      return;
     }
-    let selectionEnd = selectionStart;
+    const { pageX: initPageX } = event;
+    let oldY = event.pageY;
+    const initLineElement = event.target as LineElement;
+    const initLineIndex = this._lineElements.indexOf(initLineElement);
+    const lineX = initLineElement.getBoundingClientRect().left;
+    let initColIndex = Math.round(
+      (initPageX - lineX) / initLineElement.charWidth()
+    );
+    if (initColIndex > initLineElement.text.length) {
+      initColIndex = initLineElement.text.length;
+    }
+
+    this.setSelectionStart(initLineIndex, initColIndex);
+    this.setSelectionEnd(initLineIndex, initColIndex);
 
     const onMouseMove = (event: MouseEvent) => {
       if (event.target === this) return;
-      const { pageX } = event;
-      selectionEnd = Math.round((pageX - lineX) / lineElement.charWidth());
-      if (selectionEnd <= lineElement.text.length) {
-        lineElement.drawSelection(selectionStart, selectionEnd);
+      initLineElement.unHighlight();
+      this._selecting = true;
+      const { pageX, pageY } = event;
+      const targetLineElement = event.target as LineElement;
+      const targetLineIndex = this._lineElements.indexOf(targetLineElement);
+      let newColIndex = Math.round(
+        (pageX - lineX) / targetLineElement.charWidth()
+      );
+      if (newColIndex > targetLineElement.text.length) {
+        newColIndex = targetLineElement.text.length;
       }
-    }
+      this.setSelectionEnd(targetLineIndex, newColIndex);
+
+      const selectionStart = this.selectionStart();
+      const selectionEnd = this.selectionEnd();
+      if (selectionStart && selectionEnd) {
+        const deltaY = pageY - oldY;
+        if (targetLineIndex === initLineIndex) {
+          // Selection is on one line - the current/initial line:
+          targetLineElement.drawSelection(selectionStart.col, selectionEnd.col);
+          const previousLine = this._lineElements[initLineIndex - 1];
+          if (previousLine) {
+            previousLine.refresh();
+          }
+          const nextLine = this._lineElements[initLineIndex + 1];
+          if (nextLine) {
+            nextLine.refresh();
+          }
+        } else if (deltaY > 0) {
+          // Selection is moving down:
+          if (targetLineIndex > initLineIndex) {
+            // Selection is moving away from the inital line index:
+            const previousLineElement = this._lineElements[targetLineIndex - 1];
+            if (previousLineElement !== initLineElement) {
+              previousLineElement.drawSelection(
+                0,
+                previousLineElement.text.length
+              );
+            } else {
+              initLineElement.drawSelection(
+                selectionStart.col,
+                previousLineElement.text.length
+              );
+            }
+            targetLineElement.drawSelection(0, selectionEnd.col);
+          } else {
+            // Selection is moving towards the initial line index:
+            const previousLineElement = this._lineElements[targetLineIndex - 1];
+            if (
+              previousLineElement &&
+              previousLineElement !== initLineElement
+            ) {
+              previousLineElement.refresh();
+            } else if (previousLineElement) {
+              initLineElement.drawSelection(
+                selectionStart.col,
+                previousLineElement.text.length
+              );
+            }
+            targetLineElement.drawSelection(
+              selectionEnd.col,
+              targetLineElement.text.length
+            );
+          }
+        } else if (deltaY < 0) {
+          // Selection is moving up the page:
+          if (targetLineIndex < initLineIndex) {
+            // Selection is moving away from the initial line index:
+            const nextLineElement = this._lineElements[targetLineIndex + 1];
+            if (nextLineElement !== initLineElement) {
+              nextLineElement.drawSelection(0, nextLineElement.text.length);
+            } else {
+              initLineElement.drawSelection(0, selectionStart.col);
+            }
+            targetLineElement.drawSelection(
+              selectionEnd.col,
+              targetLineElement.text.length
+            );
+          } else {
+            // Selection is moving towards the initial line index:
+            const nextLineElement = this._lineElements[targetLineIndex + 1];
+            if (nextLineElement && nextLineElement !== initLineElement) {
+              nextLineElement.refresh();
+            } else {
+              initLineElement.drawSelection(0, initLineElement.text.length);
+            }
+            targetLineElement.drawSelection(0, selectionEnd.col);
+          }
+        }
+      }
+      oldY = pageY;
+    };
 
     const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    }
+      this._selecting = false;
+      this.removeEventListener("mousemove", onMouseMove as EventListener);
+      this.removeEventListener("mouseup", onMouseUp);
+    };
 
-    document.addEventListener(
-      "mousemove",
-      onMouseMove as EventListener
-    );
-    document.addEventListener("mouseup", onMouseUp);
+    this.addEventListener("mousemove", onMouseMove as EventListener);
+    this.addEventListener("mouseup", onMouseUp);
   }
 
   // Helper methods:

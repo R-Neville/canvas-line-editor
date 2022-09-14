@@ -86,8 +86,8 @@ class Editor extends HTMLElement {
 
   private onSelectionChanged(event: CustomEvent) {
     event.stopPropagation();
-    const { lineStart } = event.detail.caret;
-    this._margin.highlightLineNumbers(lineStart);
+    const { line } = event.detail.caret;
+    this._margin.highlightLineNumbers(line);
   }
 
   private onLineCountChanged(event: CustomEvent) {

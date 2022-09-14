@@ -20,6 +20,9 @@ const lines = [
   "line 1 - the first line",
   "line 2 - the second line",
   "line 3 - the third line",
+  "line 4 - the forth line",
+  "line 5 - the fifth line",
+  "line 6 - the sixth line",
 ];
 
 document.body.appendChild(editor);

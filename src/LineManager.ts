@@ -1,34 +1,31 @@
+export interface LMSelection {
+  line: number;
+  col: number;
+}
+
 class LineManager {
-  private _startingLineNumber: number;
-  private _endingLineNumber: number;
+  private _line: number;
+  private _col: number;
   private _currentLineCount: number;
   private _oldLineCount: number;
-  private _startingColNumber: number;
-  private _endingColNumber: number;
+  private _selectionStart: LMSelection|null;
+  private _selectionEnd: LMSelection|null;
   
   constructor() {
-    this._startingLineNumber = 0;
-    this._endingLineNumber = 0;
+    this._line = 0;
+    this._col = 0;
     this._currentLineCount = 0;
-    this._startingColNumber = 0;
-    this._endingColNumber = 0;
     this._oldLineCount = 0;
+    this._selectionStart = null;
+    this._selectionEnd = null
   }
 
-  get lineStart() {
-    return this._startingLineNumber;
+  get line() {
+    return this._line;
   }
 
-  set lineStart(value: number) {
-    this._startingLineNumber = value;
-  }
-
-  get lineEnd() {
-    return this._endingLineNumber;
-  }
-
-  set lineEnd(value: number) {
-    this._endingLineNumber = value;
+  get col() {
+    return this._col;
   }
 
   get currentLineCount() {
@@ -44,36 +41,32 @@ class LineManager {
     return this._oldLineCount;
   }
 
-  get colStart() {
-    return this._startingColNumber;
-  }
-
-  set colStart(value) {
-    this._startingColNumber = value;
-  }
-
-  get colEnd() {
-    return this._endingColNumber;
-  }
-
-  set colEnd(value) {
-    this._endingColNumber = value;
-  }
-
   get caret() {
     return {
-      lineStart: this.lineStart,
-      lineEnd: this.lineEnd,
-      colStart: this.colStart,
-      colEnd: this.colEnd,
+      line: this.line,
+      col: this.col,
     };
   }
 
+  get selectionStart() {
+    return this._selectionStart;
+  }
+
+  set selectionStart(newValue: LMSelection|null) {
+    this._selectionStart = newValue;
+  }
+
+  get selectionEnd() {
+    return this._selectionEnd;
+  }
+
+  set selectionEnd(newValue: LMSelection|null) {
+    this._selectionEnd = newValue;
+  }
+
   updateCaretPos(line: number, col: number) {
-    this.lineStart = line; 
-    this.lineEnd = line;
-    this.colStart = col;
-    this.colEnd = col;
+    this._line = line; 
+    this._col = col;
   }
 }
 
