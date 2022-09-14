@@ -211,6 +211,8 @@ class LineElement extends HTMLCanvasElement {
 
   private onKeyDown(event: KeyboardEvent) {
     event.preventDefault();
+    event.stopPropagation();
+    if (!this._focused) return;
     const caretPos = this.getCaretPos();
     switch (event.key) {
       case "Escape":
@@ -295,7 +297,7 @@ class LineElement extends HTMLCanvasElement {
           this.setCaretPos(Math.round(textWidth / charWidth));
         }
         this.drawCaret();
-      }
+      } 
       this.removeEventListener("mouseup", onMouseUp as EventListener);
     };
     this.dispatchLineSelected();

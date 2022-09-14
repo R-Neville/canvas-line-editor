@@ -62,8 +62,8 @@ class TextArea extends HTMLElement {
       "move-caret-right",
       this.onMoveCaretRight as EventListener
     );
-
     this.addEventListener("mousedown", this.onMouseDown as EventListener);
+    document.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
   }
 
   get capsOn() {
@@ -472,11 +472,24 @@ class TextArea extends HTMLElement {
     const onMouseUp = () => {
       this._selecting = false;
       this.removeEventListener("mousemove", onMouseMove as EventListener);
-      this.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("mouseup", onMouseUp.bind(this));
     };
 
     this.addEventListener("mousemove", onMouseMove as EventListener);
-    this.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("mouseup", onMouseUp.bind(this));
+  }
+
+  private onKeyDown(event: KeyboardEvent) {
+    switch (event.key) {
+      case "Backspace":
+        this.deleteSelectedText();
+        return;
+      case "Delete":
+        this.deleteSelectedText();
+        return;
+      default:
+        return;
+    }
   }
 
   // Helper methods:
@@ -487,6 +500,20 @@ class TextArea extends HTMLElement {
       return matches[0];
     }
     return "";
+  }
+
+  private deleteSelectedText() {
+    const selectionStart = this.selectionStart();
+    const selectionEnd = this.selectionEnd();
+    if (selectionStart && selectionEnd) {
+      if (selectionStart.line === selectionEnd.line) {
+        const lineIndex = selectionStart.line;
+        let newText = this._lines[lineIndex].slice(0, selectionStart.col);
+        newText += this._lines[lineIndex].slice(selectionEnd.col);
+        this._lines[lineIndex] = newText;
+        this._lineElements[lineIndex].setText(newText);
+      }
+    }
   }
 }
 
