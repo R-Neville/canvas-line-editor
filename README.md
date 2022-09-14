@@ -1,6 +1,6 @@
 # Canvas Line Editor
 ### By Robbie Neville
-Canvas Line Editor my (ongoing) attempt at creating a plaintext editing interface for an IDE
+Canvas Line Editor is my (ongoing) attempt at creating a plaintext editing interface for an IDE
 I'm building with Electron.js.
 
 ## Why HTML Canvas?
