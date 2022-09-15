@@ -11,6 +11,7 @@ applyStyles(document.body, {
   width: "100%",
   minHeight: "100vh",
   margin: "0px",
+  userSelect: "none",
 } as CSSStyleDeclaration);
 
 const app = new App(themes.defaultTheme);

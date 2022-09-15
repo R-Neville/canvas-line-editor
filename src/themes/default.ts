@@ -7,11 +7,12 @@ const defaultTheme = {
     highlightBg: "#273746",
   },
   sideBar: {
-    bg: "#B2BABB",
-    fg: "#17202A",
+    bg: "#273746",
+    fg: "#B2BABB",
+    highlightBg: "#34495E",
   },
   editor: {
-    bg: "#2C3E50",
+    bg: "#212F3D",
   },
   scrollBar: {
     bg: "#B2BABB",

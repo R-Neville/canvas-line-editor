@@ -6,6 +6,7 @@ import MenuOption from "./components/MenuOption";
 import Icon from "./components/Icon";
 import { buildFileExplorerIconSVG, buildPlusIconSVG } from "./icons";
 import universalStyles from "./universalStyles";
+import Tab from "./components/Tab";
 
 class EditorView extends HTMLElement {
   private _theme: Theme;
@@ -38,6 +39,11 @@ class EditorView extends HTMLElement {
       gridTemplateRows: "max-content 1fr",
       height: "100vh",
     } as CSSStyleDeclaration);
+
+    this.addEventListener(
+      "switch-editor-requested",
+      this.onSwitchEditorRequested as EventListener
+    );
   }
 
   openEditor() {
@@ -95,17 +101,42 @@ class EditorView extends HTMLElement {
       gridRow: "2",
       display: "grid",
       gridTemplateColumns: "max-content 1fr",
+      overflow: "hidden",
+      maxHeight: "100%",
     } as CSSStyleDeclaration);
 
     return wrapper;
   }
 
   private newEditor() {
-    console.log("new editor");
+    const editor = new Editor(this._theme);
+    editor.style.gridColumn = "2";
+    editor.appendLine("");
+    this._editors.push(editor);
+    if (this._currentIndex >= 0) {
+      this._editors[this._currentIndex].hide();
+      this._sideBar.unHighlightTabAtIndex(this._currentIndex);
+    }
+    this._currentIndex += 1;
+    this._contentWrapper.appendChild(editor);
+    const tab = new Tab("New Editor", this._theme.sideBar);
+    tab.highlight();
+    this._sideBar.addTabAtIndex(tab, this._currentIndex);
   }
 
-  private addEditorAtIndex(editor: Editor, index: number) {
-    this._editors.splice(index, 0, editor);
+  private showEditorAtIndex(index: number) {
+    this._editors[this._currentIndex].hide();
+    this._sideBar.unHighlightTabAtIndex(this._currentIndex);
+    this._currentIndex = index;
+    this._editors[this._currentIndex].show();
+    this._sideBar.highlightTabAtIndex(this._currentIndex);
+  }
+
+  private onSwitchEditorRequested(event: CustomEvent) {
+    const { index } = event.detail;
+    if (index !== this._currentIndex) {
+      this.showEditorAtIndex(index);
+    }
   }
 }
 

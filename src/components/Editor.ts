@@ -39,7 +39,7 @@ class Editor extends HTMLElement {
       overflow: "hidden",
       padding: "5px",
       width: "100%",
-      maxHeight: "500px",
+      maxHeight: "100%",
       backgroundColor: this._theme.editor.bg,
     } as CSSStyleDeclaration);
 
@@ -64,6 +64,14 @@ class Editor extends HTMLElement {
       "selection-changed",
       this.onSelectionChanged as EventListener
     );
+  }
+
+  show() {
+    this.style.display = "grid";
+  }
+
+  hide() {
+    this.style.display = "none";
   }
 
   updateTheme(newTheme: Theme) {
