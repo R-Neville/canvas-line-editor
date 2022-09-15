@@ -1,20 +1,23 @@
 import { applyStyles } from "../helpers";
+import ComponentTheme from "../themes/ComponentTheme";
 import ResizeHandle from "./ResizeHandle";
 import Tab from "./Tab";
 
 const MIN_WIDTH = 200;
 
 class SideBar extends HTMLElement {
+  private _theme: ComponentTheme;
   private _tabs: Tab[];
   private _contentWrapper: HTMLDivElement;
   private _resizeHandle: ResizeHandle;
 
-  constructor() {
+  constructor(theme: ComponentTheme) {
     super();
 
+    this._theme = theme;
     this._tabs = [];
     this._contentWrapper = this.buildContentWrapper();
-    this._resizeHandle = new ResizeHandle();
+    this._resizeHandle = new ResizeHandle(theme);
 
     this.appendChild(this._contentWrapper);
     this.appendChild(this._resizeHandle);
@@ -24,7 +27,7 @@ class SideBar extends HTMLElement {
       gridTemplateColumns: "1fr max-content",
       width: "200px",
       height: "100%",
-      backgroundColor: "green",
+      backgroundColor: this._theme.bg,
     } as CSSStyleDeclaration);
 
     this.addEventListener("resize-handle-used", this.onResizeHandleUsed as EventListener);

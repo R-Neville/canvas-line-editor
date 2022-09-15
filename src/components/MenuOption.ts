@@ -1,14 +1,17 @@
 import { applyStyles } from "../helpers";
+import ComponentTheme from "../themes/ComponentTheme";
 import Icon from "./Icon";
 
 class MenuOption extends HTMLElement {
   private _icon: Icon;
+  private _theme: ComponentTheme;
 
-  constructor(icon: Icon, onClick: EventListener) {
+  constructor(icon: Icon, onClick: EventListener, theme: ComponentTheme) {
     super();
 
+    this._theme = theme;
     this._icon = icon;
-    this._icon.setColor("#000");
+    this._icon.setColor(this._theme.fg);
     this.appendChild(this._icon);
 
     applyStyles(this, {

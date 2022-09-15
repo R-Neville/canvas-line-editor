@@ -1,15 +1,20 @@
 import { applyStyles } from "../helpers";
+import ComponentTheme from "../themes/ComponentTheme";
 
 class ResizeHandle extends HTMLElement {
-  constructor() {
+  private _theme: ComponentTheme;
+
+  constructor(theme: ComponentTheme) {
     super();
+
+    this._theme = theme;
 
     applyStyles(this, {
       width: "3px",
       minWidth: "3px",
       height: "100%",
+      backgroundColor: this._theme.fg,
       cursor: "ew-resize",
-      backgroundColor: "black",
     } as CSSStyleDeclaration);
 
     this.addEventListener("mousedown", this.onMouseDown);

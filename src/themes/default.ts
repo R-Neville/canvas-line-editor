@@ -1,6 +1,14 @@
 import Theme from "./Theme";
 
 const defaultTheme = {
+  menuBar: {
+    bg: "#17202A",
+    fg: "#E5E8E8",
+  },
+  sideBar: {
+    bg: "#B2BABB",
+    fg: "#17202A",
+  },
   editor: {
     bg: "#2C3E50",
   },

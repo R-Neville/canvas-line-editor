@@ -24,7 +24,7 @@ class EditorView extends HTMLElement {
     this._sideBarVisible = false;
     this._menuBar = this.buildMenuBar();
     this._contentWrapper = this.buildContentWrapper();
-    this._sideBar = new SideBar();
+    this._sideBar = new SideBar(this._theme.sideBar);
 
     this.appendChild(this._menuBar);
     this.appendChild(this._contentWrapper);
@@ -52,19 +52,23 @@ class EditorView extends HTMLElement {
       alignItems: "center",
       width: "100%",
       height: "50px",
-      backgroundColor: "red",
+      backgroundColor: this._theme.menuBar.bg,
     } as CSSStyleDeclaration);
 
     const sideBarIcon = new Icon(buildFileExplorerIconSVG(), "30px", true);
-    const toggleSideBarOption = new MenuOption(sideBarIcon, (() => {
-      if (this._sideBarVisible) {
-        this._sideBar.hide();
-        this._sideBarVisible = false;
-      } else {
-        this._sideBar.show();
-        this._sideBarVisible = true;
-      }
-    }).bind(this) as EventListener);
+    const toggleSideBarOption = new MenuOption(
+      sideBarIcon,
+      (() => {
+        if (this._sideBarVisible) {
+          this._sideBar.hide();
+          this._sideBarVisible = false;
+        } else {
+          this._sideBar.show();
+          this._sideBarVisible = true;
+        }
+      }).bind(this) as EventListener,
+      this._theme.menuBar
+    );
     menuBar.appendChild(toggleSideBarOption);
 
     return menuBar;
