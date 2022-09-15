@@ -55,7 +55,6 @@ class EditorView extends HTMLElement {
       alignItems: "center",
       padding: "0.5em",
       width: "100%",
-      height: "50px",
       backgroundColor: this._theme.menuBar.bg,
     } as CSSStyleDeclaration);
 
