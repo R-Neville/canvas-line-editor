@@ -494,9 +494,23 @@ class TextArea extends HTMLElement {
     switch (event.key) {
       case "Backspace":
         this.deleteSelectedText();
+        this.setSelectionStart();
+        this.setSelectionEnd();
         return;
       case "Delete":
         this.deleteSelectedText();
+        this.setSelectionStart();
+        this.setSelectionEnd();
+        return;
+      case "Enter":
+        this.deleteSelectedText();
+        const newIndex = this._lineManager.caret.line + 1;
+        this.addLine("", newIndex);
+        this.setCaret(newIndex, 0);
+        this._lineElements[newIndex].focusAt(0);
+        this.dispatchLineCountChanged();
+        this.dispatchContentChanged(newIndex, false);
+        this.dispatchSelectionChanged();
         return;
       default:
         return;
@@ -561,6 +575,13 @@ class TextArea extends HTMLElement {
         );
         if (firstLine.text.length === 0 && this._lines.length > 1) {
           this.removeLineAtIndex(firstLineIndex);
+          this._lineElements[firstLineIndex - 1].focusAt(
+            this._lineElements[firstLineIndex - 1].text.length
+          );
+        } else {
+          this._lineElements[firstLineIndex].focusAt(
+            this._lineElements[firstLineIndex].text.length
+          );
         }
       } else {
         const lastLineIndex = selectionStart.line;
@@ -587,6 +608,13 @@ class TextArea extends HTMLElement {
         );
         if (firstLine.text.length === 0 && this._lines.length > 1) {
           this.removeLineAtIndex(firstLineIndex);
+          this._lineElements[firstLineIndex - 1].focusAt(
+            this._lineElements[firstLineIndex - 1].text.length
+          );
+        } else {
+          this._lineElements[firstLineIndex].focusAt(
+            this._lineElements[firstLineIndex].text.length
+          );
         }
       }
     }
@@ -596,8 +624,7 @@ class TextArea extends HTMLElement {
     const lineElement = this._lineElements.splice(index, 1)[0];
     lineElement.remove();
     this._lines.splice(index, 1);
-    this._lineManager.currentLineCount =
-      this._lineManager.currentLineCount - 1;
+    this._lineManager.currentLineCount = this._lineManager.currentLineCount - 1;
     const newLineIndex = index - 1;
     const lineAbove = this._lineElements[newLineIndex];
     const newColIndex = lineAbove && lineAbove.text.length;
