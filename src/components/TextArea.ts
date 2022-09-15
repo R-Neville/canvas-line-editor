@@ -36,6 +36,7 @@ class TextArea extends HTMLElement {
       "line-selected",
       this.onLineSelected as EventListener
     );
+    this.addEventListener("line-blurred", this.onLineBlurred as EventListener);
     this.addEventListener("line-changed", this.onLineChanged as EventListener);
     this.addEventListener(
       "new-line-requested",
@@ -63,7 +64,8 @@ class TextArea extends HTMLElement {
       this.onMoveCaretRight as EventListener
     );
     this.addEventListener("mousedown", this.onMouseDown as EventListener);
-    document.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
+    this.addEventListener("scroll-to-line-end", this.onScrollToLineEnd as EventListener);
+    this.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
   }
 
   get capsOn() {
@@ -223,6 +225,19 @@ class TextArea extends HTMLElement {
     this.dispatchSelectionChanged();
   }
 
+  private onLineBlurred(event: CustomEvent) { 
+    event.stopPropagation();
+    const lineElement = event.target as LineElement;
+    const index = this._lineElements.indexOf(lineElement);
+    const customEvent = new CustomEvent("unhighlight-line-number", {
+      bubbles: true,
+      detail: {
+        index,
+      }
+    });
+    this.dispatchEvent(customEvent);
+  }
+
   private onLineChanged(event: CustomEvent) {
     event.stopPropagation();
     this.clearSelection();
@@ -376,7 +391,7 @@ class TextArea extends HTMLElement {
 
     const onMouseMove = (event: MouseEvent) => {
       if (event.target === this) return;
-      initLineElement.unHighlight();
+      initLineElement.blur();
       this._selecting = true;
       const { pageX, pageY } = event;
       const targetLineElement = event.target as LineElement;
@@ -479,6 +494,10 @@ class TextArea extends HTMLElement {
     document.addEventListener("mouseup", onMouseUp.bind(this));
   }
 
+  private onScrollToLineEnd(event: CustomEvent) {
+
+  }
+
   private onKeyDown(event: KeyboardEvent) {
     switch (event.key) {
       case "Backspace":
@@ -505,13 +524,14 @@ class TextArea extends HTMLElement {
   private deleteSelectedText() {
     const selectionStart = this.selectionStart();
     const selectionEnd = this.selectionEnd();
+    console.log(selectionStart, selectionEnd);
     if (selectionStart && selectionEnd) {
       if (selectionStart.line === selectionEnd.line) {
         const lineIndex = selectionStart.line;
         let newText = this._lines[lineIndex].slice(0, selectionStart.col);
         newText += this._lines[lineIndex].slice(selectionEnd.col);
         this._lines[lineIndex] = newText;
-        this._lineElements[lineIndex].setText(newText);
+        this._lineElements[lineIndex].update(newText);
       }
     }
   }

@@ -60,6 +60,7 @@ class Editor extends HTMLElement {
       "line-count-changed",
       this.onLineCountChanged as EventListener
     );
+    this.addEventListener("unhighlight-line-number", this.onUnhighlightLineNumber as EventListener);
     this.addEventListener(
       "selection-changed",
       this.onSelectionChanged as EventListener
@@ -95,7 +96,13 @@ class Editor extends HTMLElement {
   private onSelectionChanged(event: CustomEvent) {
     event.stopPropagation();
     const { line } = event.detail.caret;
-    this._margin.highlightLineNumbers(line);
+    this._margin.highlightLineNumber(line);
+  }
+
+  private onUnhighlightLineNumber(event: CustomEvent) {
+    event.stopPropagation();
+    const { index } = event.detail;
+    this._margin.unHighlightLineNumber(index);
   }
 
   private onLineCountChanged(event: CustomEvent) {

@@ -61,16 +61,13 @@ class Margin extends HTMLElement {
     }
   }
 
-  highlightLineNumbers(index: number) {
+  highlightLineNumber(index: number) {
     // Add new highlight
     this._lineNumbers[index].highlight();
+  }
 
-    // Remove highlight from all line numbers
-    this._lineNumbers.forEach((lineNumber, i) => {
-      if (i !== index && lineNumber.highlighted()) {
-        lineNumber.unHighlight();
-      }
-    });
+  unHighlightLineNumber(index: number) {
+    this._lineNumbers[index].unHighlight();
   }
 
   unHighlightLineNumbers() {

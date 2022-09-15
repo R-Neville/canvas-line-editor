@@ -136,7 +136,7 @@ class LineElement extends HTMLCanvasElement {
     } as CSSStyleDeclaration);
   }
 
-  private update(text: string) {
+  update(text: string) {
     this.clear();
     this.setText(text);
     const textWidth = this.textWidth();
@@ -207,6 +207,10 @@ class LineElement extends HTMLCanvasElement {
     applyStyles(this, {
       backgroundColor: "transparent",
     } as CSSStyleDeclaration);
+    const customEvent = new CustomEvent("line-blurred", {
+      bubbles: true,
+    });
+    this.dispatchEvent(customEvent);
   }
 
   private onKeyDown(event: KeyboardEvent) {
