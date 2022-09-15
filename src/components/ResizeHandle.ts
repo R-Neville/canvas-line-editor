@@ -1,4 +1,5 @@
 import { applyStyles } from "../helpers";
+import universalStyles from "../universalStyles";
 import ComponentTheme from "../themes/ComponentTheme";
 
 class ResizeHandle extends HTMLElement {
@@ -10,6 +11,7 @@ class ResizeHandle extends HTMLElement {
     this._theme = theme;
 
     applyStyles(this, {
+      ...universalStyles,
       width: "3px",
       minWidth: "3px",
       height: "100%",

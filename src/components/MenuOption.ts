@@ -1,5 +1,6 @@
 import { applyStyles } from "../helpers";
 import ComponentTheme from "../themes/ComponentTheme";
+import universalStyles from "../universalStyles";
 import Icon from "./Icon";
 
 class MenuOption extends HTMLElement {
@@ -15,14 +16,27 @@ class MenuOption extends HTMLElement {
     this.appendChild(this._icon);
 
     applyStyles(this, {
+      ...universalStyles,
       display: "flex",
       alignItems: "center",
       padding: "0.5em",
       height: "100%",
+      borderRadius: "3px",
+      backgroundColor: "inherit",
       cursor: "pointer",
     } as CSSStyleDeclaration);
 
     this.addEventListener("click", onClick);
+    this.addEventListener("mouseenter", this.onMouseEnter);
+    this.addEventListener("mouseleave", this.onMouseLeave);
+  }
+
+  private onMouseEnter() {
+    this.style.backgroundColor = this._theme.highlightBg;
+  }
+
+  private onMouseLeave() {
+    this.style.backgroundColor = "inherit";
   }
 }
 

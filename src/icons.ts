@@ -9,6 +9,25 @@ const universalAttributes = [
   ["stroke-linejoin", "round"],
 ] as string[][];
 
+const plusIconPaths = [
+  {
+    attributes: [
+      ...universalAttributes,
+      ["d", "M 50 0 L 50 100"],
+      ["class", "stroke"],
+      ["stroke-width", "20"],
+    ]
+  },
+  {
+    attributes: [
+      ...universalAttributes,
+      ["d", "M 0 50 L 100 50"],
+      ["class", "stroke"],
+      ["stroke-width", "20"],
+    ]
+  }
+] as SVGAttibuteObject[];
+
 const closeIconPaths = [
   {
     attributes: [
@@ -275,6 +294,10 @@ function buildIcon(
 
 export function buildCloseIconSVG() {
   return buildIcon(closeIconPaths, 100, 100);
+}
+
+export function buildPlusIconSVG() {
+  return buildIcon(plusIconPaths, 100, 100);
 }
 
 export function buildClosedIconSVG() {

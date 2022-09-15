@@ -1,4 +1,5 @@
 import { applyStyles } from "../helpers";
+import universalStyles from "../universalStyles";
 import ComponentTheme from "../themes/ComponentTheme";
 import ResizeHandle from "./ResizeHandle";
 import Tab from "./Tab";
@@ -23,6 +24,7 @@ class SideBar extends HTMLElement {
     this.appendChild(this._resizeHandle);
 
     applyStyles(this, {
+      ...universalStyles,
       display: "none",
       gridTemplateColumns: "1fr max-content",
       width: "200px",

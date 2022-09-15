@@ -4,7 +4,8 @@ import Editor from "./components/Editor";
 import SideBar from "./components/SideBar";
 import MenuOption from "./components/MenuOption";
 import Icon from "./components/Icon";
-import { buildFileExplorerIconSVG } from "./icons";
+import { buildFileExplorerIconSVG, buildPlusIconSVG } from "./icons";
+import universalStyles from "./universalStyles";
 
 class EditorView extends HTMLElement {
   private _theme: Theme;
@@ -32,6 +33,7 @@ class EditorView extends HTMLElement {
     this._contentWrapper.appendChild(this._sideBar);
 
     applyStyles(this, {
+      ...universalStyles,
       display: "grid",
       gridTemplateRows: "max-content 1fr",
       height: "100vh",
@@ -47,9 +49,11 @@ class EditorView extends HTMLElement {
     const menuBar = document.createElement("div");
 
     applyStyles(menuBar, {
+      ...universalStyles,
       gridRow: "1",
       display: "flex",
       alignItems: "center",
+      padding: "0.5em",
       width: "100%",
       height: "50px",
       backgroundColor: this._theme.menuBar.bg,
@@ -58,7 +62,7 @@ class EditorView extends HTMLElement {
     const sideBarIcon = new Icon(buildFileExplorerIconSVG(), "30px", true);
     const toggleSideBarOption = new MenuOption(
       sideBarIcon,
-      (() => {
+      () => {
         if (this._sideBarVisible) {
           this._sideBar.hide();
           this._sideBarVisible = false;
@@ -66,10 +70,20 @@ class EditorView extends HTMLElement {
           this._sideBar.show();
           this._sideBarVisible = true;
         }
-      }).bind(this) as EventListener,
+      },
       this._theme.menuBar
     );
     menuBar.appendChild(toggleSideBarOption);
+
+    const newEditorIcon = new Icon(buildPlusIconSVG(), "30px", true);
+    const newEditorOption = new MenuOption(
+      newEditorIcon,
+      () => {
+        this.newEditor();
+      },
+      this._theme.menuBar
+    );
+    menuBar.appendChild(newEditorOption);
 
     return menuBar;
   }
@@ -78,12 +92,17 @@ class EditorView extends HTMLElement {
     const wrapper = document.createElement("div");
 
     applyStyles(wrapper, {
+      ...universalStyles,
       gridRow: "2",
       display: "grid",
       gridTemplateColumns: "max-content 1fr",
     } as CSSStyleDeclaration);
 
     return wrapper;
+  }
+
+  private newEditor() {
+    console.log("new editor");
   }
 
   private addEditorAtIndex(editor: Editor, index: number) {

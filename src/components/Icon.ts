@@ -1,4 +1,5 @@
 import { applyStyles } from '../helpers';
+import universalStyles from '../universalStyles';
 
 class Icon extends HTMLElement {
   private _svg: SVGElement;
@@ -10,6 +11,7 @@ class Icon extends HTMLElement {
     this.appendChild(svg);
 
     applyStyles(this, {
+      ...universalStyles,
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',

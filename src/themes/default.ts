@@ -4,6 +4,7 @@ const defaultTheme = {
   menuBar: {
     bg: "#17202A",
     fg: "#E5E8E8",
+    highlightBg: "#273746",
   },
   sideBar: {
     bg: "#B2BABB",
