@@ -7,6 +7,7 @@ import Icon from "./components/Icon";
 import { buildFileExplorerIconSVG, buildPlusIconSVG } from "./icons";
 import universalStyles from "./universalStyles";
 import Tab from "./components/Tab";
+import SplashScreen from "./components/SplashScreen";
 
 class EditorView extends HTMLElement {
   private _theme: Theme;
@@ -16,6 +17,7 @@ class EditorView extends HTMLElement {
   private _menuBar: HTMLDivElement;
   private _contentWrapper: HTMLDivElement;
   private _sideBar: SideBar;
+  private _splashScreen: SplashScreen;
 
   constructor(theme: Theme) {
     super();
@@ -27,11 +29,14 @@ class EditorView extends HTMLElement {
     this._menuBar = this.buildMenuBar();
     this._contentWrapper = this.buildContentWrapper();
     this._sideBar = new SideBar(this._theme);
+    this._splashScreen = new SplashScreen(this._theme.splashScreen);
+    this._splashScreen.style.gridColumn = "2";
 
     this.appendChild(this._menuBar);
     this.appendChild(this._contentWrapper);
 
     this._contentWrapper.appendChild(this._sideBar);
+    this._contentWrapper.appendChild(this._splashScreen);
 
     applyStyles(this, {
       ...universalStyles,
@@ -41,6 +46,7 @@ class EditorView extends HTMLElement {
       backgroundColor: this._theme.app.bg,
     } as CSSStyleDeclaration);
 
+    this.addEventListener("new-editor-requested", this.onNewEditorRequested);
     this.addEventListener(
       "switch-editor-requested",
       this.onSwitchEditorRequested as EventListener
@@ -117,10 +123,12 @@ class EditorView extends HTMLElement {
     const editor = new Editor(this._theme);
     editor.style.gridColumn = "2";
     editor.appendLine("");
-    
+
     if (this._currentIndex >= 0) {
       this._editors[this._currentIndex].hide();
       this._sideBar.unHighlightTabAtIndex(this._currentIndex);
+    } else {
+      this._splashScreen.hide();
     }
     this._currentIndex += 1;
     this._editors.splice(this._currentIndex, 0, editor);
@@ -131,6 +139,9 @@ class EditorView extends HTMLElement {
   }
 
   private showEditorAtIndex(index: number) {
+    if (this._currentIndex < 0) {
+      this._splashScreen.hide();
+    }
     this._editors[this._currentIndex].hide();
     this._sideBar.unHighlightTabAtIndex(this._currentIndex);
     this._currentIndex = index;
@@ -148,7 +159,13 @@ class EditorView extends HTMLElement {
     }
     if (this._currentIndex >= 0) {
       this.showEditorAtIndex(this._currentIndex);
+    } else {
+      this._splashScreen.show();
     }
+  }
+
+  private onNewEditorRequested() {
+    this.newEditor();
   }
 
   private onSwitchEditorRequested(event: CustomEvent) {

@@ -14,6 +14,10 @@ const defaultTheme = {
     fg: "#B2BABB",
     highlightBg: "#34495E",
   },
+  splashScreen: {
+    fg: "#212F3D",
+    bg: "#B2BABB",
+  },
   editor: {
     bg: "#212F3D",
   },
