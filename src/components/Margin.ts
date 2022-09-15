@@ -67,7 +67,7 @@ class Margin extends HTMLElement {
   }
 
   unHighlightLineNumber(index: number) {
-    this._lineNumbers[index].unHighlight();
+    this._lineNumbers[index]?.unHighlight();
   }
 
   unHighlightLineNumbers() {

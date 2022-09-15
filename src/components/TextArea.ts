@@ -64,8 +64,14 @@ class TextArea extends HTMLElement {
       this.onMoveCaretRight as EventListener
     );
     this.addEventListener("mousedown", this.onMouseDown as EventListener);
-    this.addEventListener("scroll-to-line-end", this.onScrollToLineEnd as EventListener);
-    this.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
+    this.addEventListener(
+      "scroll-to-line-end",
+      this.onScrollToLineEnd as EventListener
+    );
+    document.addEventListener(
+      "keydown",
+      this.onKeyDown.bind(this) as EventListener
+    );
   }
 
   get capsOn() {
@@ -225,7 +231,7 @@ class TextArea extends HTMLElement {
     this.dispatchSelectionChanged();
   }
 
-  private onLineBlurred(event: CustomEvent) { 
+  private onLineBlurred(event: CustomEvent) {
     event.stopPropagation();
     const lineElement = event.target as LineElement;
     const index = this._lineElements.indexOf(lineElement);
@@ -233,7 +239,7 @@ class TextArea extends HTMLElement {
       bubbles: true,
       detail: {
         index,
-      }
+      },
     });
     this.dispatchEvent(customEvent);
   }
@@ -272,19 +278,7 @@ class TextArea extends HTMLElement {
     const lineElement = event.target as LineElement;
     const lineIndex = this._lineElements.indexOf(lineElement);
     if (lineIndex > 0) {
-      this._lineElements.splice(lineIndex, 1);
-      lineElement.remove();
-      this._lines.splice(lineIndex, 1);
-      this._lineManager.currentLineCount =
-        this._lineManager.currentLineCount - 1;
-      const newLineIndex = lineIndex - 1;
-      const lineAbove = this._lineElements[newLineIndex];
-      const newColIndex = lineAbove && lineAbove.text?.length;
-      this.setCaret(newLineIndex, newColIndex || 0);
-      lineAbove.focusAt(newColIndex || 0);
-      this.dispatchLineCountChanged();
-      this.dispatchContentChanged(newLineIndex, true);
-      this.dispatchSelectionChanged();
+      this.removeLineAtIndex(lineIndex);
     }
   }
 
@@ -494,9 +488,7 @@ class TextArea extends HTMLElement {
     document.addEventListener("mouseup", onMouseUp.bind(this));
   }
 
-  private onScrollToLineEnd(event: CustomEvent) {
-
-  }
+  private onScrollToLineEnd(event: CustomEvent) {}
 
   private onKeyDown(event: KeyboardEvent) {
     switch (event.key) {
@@ -524,16 +516,107 @@ class TextArea extends HTMLElement {
   private deleteSelectedText() {
     const selectionStart = this.selectionStart();
     const selectionEnd = this.selectionEnd();
-    console.log(selectionStart, selectionEnd);
     if (selectionStart && selectionEnd) {
       if (selectionStart.line === selectionEnd.line) {
         const lineIndex = selectionStart.line;
-        let newText = this._lines[lineIndex].slice(0, selectionStart.col);
-        newText += this._lines[lineIndex].slice(selectionEnd.col);
-        this._lines[lineIndex] = newText;
-        this._lineElements[lineIndex].update(newText);
+        if (selectionStart.col < selectionEnd.col) {
+          this._lineElements[lineIndex].update(
+            this.deleteTextFromLine(
+              lineIndex,
+              selectionStart.col,
+              selectionEnd.col
+            )
+          );
+        } else {
+          this._lineElements[lineIndex].update(
+            this.deleteTextFromLine(
+              lineIndex,
+              selectionEnd.col,
+              selectionStart.col
+            )
+          );
+        }
+      } else if (selectionStart.line < selectionEnd.line) {
+        const lastLineIndex = selectionEnd.line;
+        const lastLine = this._lineElements[lastLineIndex];
+        lastLine.update(
+          this.deleteTextFromLine(lastLineIndex, 0, selectionEnd.col)
+        );
+        if (lastLine.text.length === 0) {
+          this.removeLineAtIndex(lastLineIndex);
+        }
+        let i = lastLineIndex - 1;
+        while (i > selectionStart.line) {
+          this.removeLineAtIndex(i);
+          i--;
+        }
+        const firstLineIndex = selectionStart.line;
+        const firstLine = this._lineElements[firstLineIndex];
+        firstLine.update(
+          this.deleteTextFromLine(
+            firstLineIndex,
+            selectionStart.col,
+            firstLine.text.length
+          )
+        );
+        if (firstLine.text.length === 0 && this._lines.length > 1) {
+          this.removeLineAtIndex(firstLineIndex);
+        }
+      } else {
+        const lastLineIndex = selectionStart.line;
+        const lastLine = this._lineElements[lastLineIndex];
+        lastLine.update(
+          this.deleteTextFromLine(lastLineIndex, 0, selectionStart.col)
+        );
+        if (lastLine.text.length === 0) {
+          this.removeLineAtIndex(lastLineIndex);
+        }
+        let i = lastLineIndex - 1;
+        while (i > selectionEnd.line) {
+          this.removeLineAtIndex(i);
+          i--;
+        }
+        const firstLineIndex = selectionEnd.line;
+        const firstLine = this._lineElements[firstLineIndex];
+        firstLine.update(
+          this.deleteTextFromLine(
+            firstLineIndex,
+            selectionEnd.col,
+            firstLine.text.length
+          )
+        );
+        if (firstLine.text.length === 0 && this._lines.length > 1) {
+          this.removeLineAtIndex(firstLineIndex);
+        }
       }
     }
+  }
+
+  private removeLineAtIndex(index: number) {
+    const lineElement = this._lineElements.splice(index, 1)[0];
+    lineElement.remove();
+    this._lines.splice(index, 1);
+    this._lineManager.currentLineCount =
+      this._lineManager.currentLineCount - 1;
+    const newLineIndex = index - 1;
+    const lineAbove = this._lineElements[newLineIndex];
+    const newColIndex = lineAbove && lineAbove.text.length;
+    this.setCaret(newLineIndex, newColIndex || 0);
+    lineAbove.focusAt(newColIndex || 0);
+    this.dispatchLineCountChanged();
+    this.dispatchContentChanged(newLineIndex, true);
+    this.dispatchSelectionChanged();
+  }
+
+  private deleteTextFromLine(
+    lineIndex: number,
+    colStart: number,
+    colEnd: number
+  ) {
+    const oldText = this._lines[lineIndex];
+    const newText = oldText.slice(0, colStart) + oldText.slice(colEnd);
+    this._lines[lineIndex] = newText;
+    return newText;
   }
 }
 

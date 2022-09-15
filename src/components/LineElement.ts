@@ -8,7 +8,7 @@ class LineElement extends HTMLCanvasElement {
   private _caretPos: number;
   private _textArea: TextArea;
   private _focused: boolean;
-  private _selection: Function|null;
+  private _selection: Function | null;
 
   constructor(parent: TextArea, text: string, theme: ComponentTheme) {
     super();
@@ -74,7 +74,11 @@ class LineElement extends HTMLCanvasElement {
 
   focusAt(index: number) {
     this.focus();
-    this.setCaretPos(index);
+    if (this._text.length < index) {
+      this.setCaretPos(this._text.length);
+    } else {
+      this.setCaretPos(index);
+    }
     this.refresh();
     this.drawCaret();
   }
@@ -120,12 +124,16 @@ class LineElement extends HTMLCanvasElement {
     const context = this.getContext("2d");
     if (context) {
       context.fillStyle = this._theme.fg + "55";
-      context.fillRect(
-        2 + start * this.charWidth(),
-        0,
-        (end - start) * this.charWidth(),
-        this.height
-      );
+      if (this._text.length > 0) {
+        context.fillRect(
+          2 + start * this.charWidth(),
+          0,
+          (end - start) * this.charWidth(),
+          this.height
+        );
+      } else {
+        context.fillRect(2, 0, this.charWidth(), this.height);
+      }
     }
   }
 
@@ -301,7 +309,7 @@ class LineElement extends HTMLCanvasElement {
           this.setCaretPos(Math.round(textWidth / charWidth));
         }
         this.drawCaret();
-      } 
+      }
       this.removeEventListener("mouseup", onMouseUp as EventListener);
     };
     this.dispatchLineSelected();

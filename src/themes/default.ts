@@ -31,7 +31,6 @@ const defaultTheme = {
   lineElement: {
     fg: "#E5E8E8",
     highlightBg: "#273746",
-    border: "#B2BABB",
   }
 } as Theme;
 
