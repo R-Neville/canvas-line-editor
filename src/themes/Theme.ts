@@ -1,6 +1,7 @@
 import ComponentTheme from "./ComponentTheme";
 
 export default interface Theme {
+  app: ComponentTheme;
   menuBar: ComponentTheme;
   sideBar: ComponentTheme;
   editor: ComponentTheme;

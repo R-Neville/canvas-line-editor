@@ -1,39 +1,48 @@
 import { applyStyles } from "../helpers";
 import universalStyles from "../universalStyles";
+import Theme from "../themes/Theme";
 import ComponentTheme from "../themes/ComponentTheme";
 import ResizeHandle from "./ResizeHandle";
 import Tab from "./Tab";
+import ScrollView from "./ScrollView";
 
 const MIN_WIDTH = 200;
 
 class SideBar extends HTMLElement {
-  private _theme: ComponentTheme;
+  private _theme: Theme;
   private _tabs: Tab[];
+  private _scrollView: ScrollView;
   private _contentWrapper: HTMLDivElement;
   private _resizeHandle: ResizeHandle;
 
-  constructor(theme: ComponentTheme) {
+  constructor(theme: Theme) {
     super();
 
     this._theme = theme;
     this._tabs = [];
     this._contentWrapper = this.buildContentWrapper();
-    this._resizeHandle = new ResizeHandle(theme);
+    this._resizeHandle = new ResizeHandle(this._theme.sideBar);
+    this._scrollView = new ScrollView(this._theme);
+    this._scrollView.addVerticalScrollBar(this._contentWrapper, 10);
+    this._scrollView.setContent(this._contentWrapper);
+    
 
-    this.appendChild(this._contentWrapper);
+    this.appendChild(this._scrollView);
     this.appendChild(this._resizeHandle);
 
     applyStyles(this, {
       ...universalStyles,
       display: "none",
       gridTemplateColumns: "1fr max-content",
+      overflow: "hidden",
       width: "200px",
       height: "100%",
-      backgroundColor: this._theme.bg,
+      backgroundColor: this._theme.sideBar.bg,
     } as CSSStyleDeclaration);
 
     this.addEventListener("resize-handle-used", this.onResizeHandleUsed as EventListener);
     this.addEventListener("tab-clicked", this.onTabClicked as EventListener);
+    this.addEventListener("close-button-clicked", this.onCloseButtonClicked as EventListener);
   }
 
   show() {
@@ -54,6 +63,11 @@ class SideBar extends HTMLElement {
     this._tabs.splice(index, 0, tab);
   }
 
+  removeTabAtIndex(index: number) {
+    const tab = this._tabs.splice(index, 1)[0];
+    tab.remove();
+  }
+
   highlightTabAtIndex(index: number) {
     this._tabs[index].highlight();
   }
@@ -67,6 +81,7 @@ class SideBar extends HTMLElement {
     applyStyles(wrapper, {
       display: "flex",
       flexDirection: "column",
+      overflow: "hidden",
       width: "100%",
       height: "100%",
     } as CSSStyleDeclaration);
@@ -86,6 +101,19 @@ class SideBar extends HTMLElement {
     const tab = event.target as Tab;
     const index = this._tabs.indexOf(tab);
     const customEvent = new CustomEvent("switch-editor-requested", {
+      bubbles: true,
+      detail: {
+        index,
+      }
+    })
+    this.dispatchEvent(customEvent);
+  }
+
+  private onCloseButtonClicked(event: CustomEvent) {
+    event.stopPropagation();
+    const tab = event.target as Tab;
+    const index = this._tabs.indexOf(tab);
+    const customEvent = new CustomEvent("close-editor-requested", {
       bubbles: true,
       detail: {
         index,

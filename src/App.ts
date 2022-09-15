@@ -26,7 +26,7 @@ class EditorView extends HTMLElement {
     this._sideBarVisible = false;
     this._menuBar = this.buildMenuBar();
     this._contentWrapper = this.buildContentWrapper();
-    this._sideBar = new SideBar(this._theme.sideBar);
+    this._sideBar = new SideBar(this._theme);
 
     this.appendChild(this._menuBar);
     this.appendChild(this._contentWrapper);
@@ -38,11 +38,16 @@ class EditorView extends HTMLElement {
       display: "grid",
       gridTemplateRows: "max-content 1fr",
       height: "100vh",
+      backgroundColor: this._theme.app.bg,
     } as CSSStyleDeclaration);
 
     this.addEventListener(
       "switch-editor-requested",
       this.onSwitchEditorRequested as EventListener
+    );
+    this.addEventListener(
+      "close-editor-requested",
+      this.onCloseEditorRequested as EventListener
     );
   }
 
@@ -132,11 +137,29 @@ class EditorView extends HTMLElement {
     this._sideBar.highlightTabAtIndex(this._currentIndex);
   }
 
+  private closeEditorAtIndex(index: number) {
+    const editor = this._editors.splice(index, 1)[0];
+    editor.hide();
+    this._sideBar.removeTabAtIndex(index);
+    editor.remove();
+    if (this._currentIndex > this._editors.length - 1) {
+      this._currentIndex--;
+    }
+    if (this._currentIndex >= 0) {
+      this.showEditorAtIndex(this._currentIndex);
+    }
+  }
+
   private onSwitchEditorRequested(event: CustomEvent) {
     const { index } = event.detail;
     if (index !== this._currentIndex) {
       this.showEditorAtIndex(index);
     }
+  }
+
+  private onCloseEditorRequested(event: CustomEvent) {
+    const { index } = event.detail;
+    this.closeEditorAtIndex(index);
   }
 }
 

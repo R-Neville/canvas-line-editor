@@ -1,6 +1,9 @@
 import Theme from "./Theme";
 
 const defaultTheme = {
+  app: {
+    bg: "#B2BABB",
+  },
   menuBar: {
     bg: "#17202A",
     fg: "#E5E8E8",
