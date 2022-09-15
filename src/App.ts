@@ -117,12 +117,13 @@ class EditorView extends HTMLElement {
     const editor = new Editor(this._theme);
     editor.style.gridColumn = "2";
     editor.appendLine("");
-    this._editors.push(editor);
+    
     if (this._currentIndex >= 0) {
       this._editors[this._currentIndex].hide();
       this._sideBar.unHighlightTabAtIndex(this._currentIndex);
     }
     this._currentIndex += 1;
+    this._editors.splice(this._currentIndex, 0, editor);
     this._contentWrapper.appendChild(editor);
     const tab = new Tab("New Editor", this._theme.sideBar);
     tab.highlight();
