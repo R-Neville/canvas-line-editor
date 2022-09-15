@@ -20,7 +20,7 @@ class SideBar extends HTMLElement {
     this.appendChild(this._resizeHandle);
 
     applyStyles(this, {
-      display: "grid",
+      display: "none",
       gridTemplateColumns: "1fr max-content",
       width: "200px",
       height: "100%",
@@ -28,6 +28,14 @@ class SideBar extends HTMLElement {
     } as CSSStyleDeclaration);
 
     this.addEventListener("resize-handle-used", this.onResizeHandleUsed as EventListener);
+  }
+
+  show() {
+    this.style.display = "grid";
+  }
+
+  hide() {
+    this.style.display = "none";
   }
 
   private buildContentWrapper() {

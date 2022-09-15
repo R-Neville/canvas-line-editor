@@ -2,21 +2,26 @@ import { applyStyles } from "./helpers";
 import Theme from "./themes/Theme";
 import Editor from "./components/Editor";
 import SideBar from "./components/SideBar";
+import MenuOption from "./components/MenuOption";
+import Icon from "./components/Icon";
+import { buildFileExplorerIconSVG } from "./icons";
 
 class EditorView extends HTMLElement {
   private _theme: Theme;
   private _editors: Editor[];
   private _currentIndex: number;
+  private _sideBarVisible: boolean;
   private _menuBar: HTMLDivElement;
   private _contentWrapper: HTMLDivElement;
   private _sideBar: SideBar;
-  
+
   constructor(theme: Theme) {
     super();
 
     this._theme = theme;
     this._editors = [];
     this._currentIndex = -1;
+    this._sideBarVisible = false;
     this._menuBar = this.buildMenuBar();
     this._contentWrapper = this.buildContentWrapper();
     this._sideBar = new SideBar();
@@ -40,7 +45,7 @@ class EditorView extends HTMLElement {
 
   private buildMenuBar() {
     const menuBar = document.createElement("div");
-    
+
     applyStyles(menuBar, {
       gridRow: "1",
       display: "flex",
@@ -49,6 +54,18 @@ class EditorView extends HTMLElement {
       height: "50px",
       backgroundColor: "red",
     } as CSSStyleDeclaration);
+
+    const sideBarIcon = new Icon(buildFileExplorerIconSVG(), "30px", true);
+    const toggleSideBarOption = new MenuOption(sideBarIcon, (() => {
+      if (this._sideBarVisible) {
+        this._sideBar.hide();
+        this._sideBarVisible = false;
+      } else {
+        this._sideBar.show();
+        this._sideBarVisible = true;
+      }
+    }).bind(this) as EventListener);
+    menuBar.appendChild(toggleSideBarOption);
 
     return menuBar;
   }
@@ -65,11 +82,9 @@ class EditorView extends HTMLElement {
     return wrapper;
   }
 
-
   private addEditorAtIndex(editor: Editor, index: number) {
     this._editors.splice(index, 0, editor);
   }
-
 }
 
 customElements.define("editor-view", EditorView);
