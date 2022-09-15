@@ -19,6 +19,9 @@ class SplashScreen extends HTMLElement {
     p1.textContent += "and I'm using this webpage to experiment on ";
     p1.textContent += "creating an HTML canvas based plaintext editor.";
 
+    const p2 = document.createElement("p");
+    p2.textContent = "**This application won't work properly on your mobile**";
+
     const pn = document.createElement("p");
     pn.textContent = "Copyright Robbie Neville 2022";
 
@@ -41,10 +44,11 @@ class SplashScreen extends HTMLElement {
 
     applyStyles(welcome, {
       ...universalStyles,
+      textAlign: "center",
       color: this._theme.fg,
     } as CSSStyleDeclaration);
 
-    [p1, pn].forEach(p => {
+    [p1, p2, pn].forEach(p => {
       this.appendChild(p);
       applyStyles(p, {
         ...universalStyles,

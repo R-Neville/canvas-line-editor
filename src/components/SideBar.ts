@@ -26,7 +26,6 @@ class SideBar extends HTMLElement {
     this._scrollView.addVerticalScrollBar(this._contentWrapper, 10);
     this._scrollView.setContent(this._contentWrapper);
     
-
     this.appendChild(this._scrollView);
     this.appendChild(this._resizeHandle);
 
@@ -43,6 +42,8 @@ class SideBar extends HTMLElement {
     this.addEventListener("resize-handle-used", this.onResizeHandleUsed as EventListener);
     this.addEventListener("tab-clicked", this.onTabClicked as EventListener);
     this.addEventListener("close-button-clicked", this.onCloseButtonClicked as EventListener);
+
+    this.showNoEditors();
   }
 
   show() {
@@ -54,6 +55,7 @@ class SideBar extends HTMLElement {
   }
 
   addTabAtIndex(tab: Tab, index: number) {
+    this.removeNoEditors();
     const nextTab = this._tabs[index];
     if (nextTab) {
       this._contentWrapper.insertBefore(tab, nextTab);
@@ -66,6 +68,9 @@ class SideBar extends HTMLElement {
   removeTabAtIndex(index: number) {
     const tab = this._tabs.splice(index, 1)[0];
     tab.remove();
+    if (this._tabs.length === 0) {
+      this.showNoEditors();
+    }
   }
 
   highlightTabAtIndex(index: number) {
@@ -74,6 +79,21 @@ class SideBar extends HTMLElement {
 
   unHighlightTabAtIndex(index: number) {
     this._tabs[index].unHighlight();
+  }
+
+  private showNoEditors() {
+    const p = document.createElement("p");
+    p.textContent = "No Open Editors";
+    applyStyles(p, {
+      ...universalStyles,
+      textAlign: "center",
+      color: this._theme.sideBar.fg,
+    } as CSSStyleDeclaration);
+    this._contentWrapper.appendChild(p);
+  }
+
+  private removeNoEditors() {
+    this._contentWrapper.querySelector("p")?.remove();
   }
 
   private buildContentWrapper() {
