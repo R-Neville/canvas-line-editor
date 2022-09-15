@@ -34,7 +34,7 @@ class Editor extends HTMLElement {
 
     applyStyles(this, {
       ...universalStyles,
-      display: "grid",
+      display: "none",
       gridTemplateColumns: "1fr",
       overflow: "hidden",
       padding: "5px",
@@ -69,10 +69,12 @@ class Editor extends HTMLElement {
 
   show() {
     this.style.display = "grid";
+    this._textArea.current = true;
   }
 
   hide() {
     this.style.display = "none";
+    this._textArea.current = false;
   }
 
   updateTheme(newTheme: Theme) {

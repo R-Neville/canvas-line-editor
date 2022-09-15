@@ -148,6 +148,7 @@ class EditorView extends HTMLElement {
     this._currentIndex += 1;
     this._editors.splice(this._currentIndex, 0, editor);
     this._contentWrapper.appendChild(editor);
+    editor.show();
     const tab = new Tab("New Editor", this._theme.sideBar);
     tab.highlight();
     this._sideBar.addTabAtIndex(tab, this._currentIndex);

@@ -87,6 +87,11 @@ class LineElement extends HTMLCanvasElement {
     this._text += text;
   }
 
+  insertText(text: string, col: number) {
+    const newText = this._text.slice(0, col) + text + this._text.slice(col);
+    this.update(newText);
+  }
+
   refresh() {
     this.clear();
     this.drawText();

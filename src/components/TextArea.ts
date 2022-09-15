@@ -11,6 +11,7 @@ class TextArea extends HTMLElement {
   private _lineElements: LineElement[];
   private _capsOn: boolean;
   private _selecting: boolean;
+  private _current: boolean;
 
   constructor(theme: Theme) {
     super();
@@ -21,6 +22,7 @@ class TextArea extends HTMLElement {
     this._lineElements = [];
     this._capsOn = false;
     this._selecting = false;
+    this._current = false;
 
     applyStyles(this, {
       ...universalStyles,
@@ -84,6 +86,10 @@ class TextArea extends HTMLElement {
 
   get selecting() {
     return this._selecting;
+  }
+
+  set current(newValue: boolean) {
+    this._current = newValue;
   }
 
   updateTheme(newTheme: Theme) {
@@ -491,6 +497,7 @@ class TextArea extends HTMLElement {
   private onScrollToLineEnd(event: CustomEvent) {}
 
   private onKeyDown(event: KeyboardEvent) {
+    if (!this._current) return;
     switch (event.key) {
       case "Backspace":
         this.deleteSelectedText();
@@ -513,7 +520,14 @@ class TextArea extends HTMLElement {
         this.dispatchSelectionChanged();
         return;
       default:
-        return;
+        break;
+    }
+
+    if (event.key.length === 1) {
+      this.deleteSelectedText();
+      const { line, col } = this._lineManager.caret;
+      this._lineElements[line].insertText(event.key, col);
+      this._lineElements[line].focusAt(col + 1);
     }
   }
 
