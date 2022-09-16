@@ -82,9 +82,15 @@ class ScrollBar extends HTMLElement {
       } as CSSStyleDeclaration);
     }
 
-    this._mountEl.addEventListener('wheel', this.onWheel.bind(this) as EventListener);
-    this._scrollEl.addEventListener('scroll', this.onScroll.bind(this));
-    this._thumb.addEventListener('mousedown', this.onMouseDown.bind(this) as EventListener);
+    this._mountEl.addEventListener(
+      "wheel",
+      this.onWheel.bind(this) as EventListener
+    );
+    this._scrollEl.addEventListener("scroll", this.onScroll.bind(this));
+    this._thumb.addEventListener(
+      "mousedown",
+      this.onMouseDown.bind(this) as EventListener
+    );
   }
 
   connectedCallback() {
@@ -107,6 +113,7 @@ class ScrollBar extends HTMLElement {
       this.updateThumbSize(scrollElHeight, scrollHeight, height);
       this._thumb.style.height = this._thumbSize + "px";
     }
+    this.toDisplayOrNotToDisplay();
   }
 
   private updateThumbSize(size: number, scrollSize: number, mountSize: number) {
@@ -119,28 +126,30 @@ class ScrollBar extends HTMLElement {
   }
 
   private resizeObserverCallback(entries: ResizeObserverEntry[]) {
-    const { scrollWidth, scrollHeight, clientWidth, clientHeight } =
-      this._scrollEl;
-    entries.forEach((_) => {
+    entries.forEach(() => {
       this.updateThumb();
-      if (this._horizontal) {
-        if (scrollWidth === clientWidth) {
-          this.style.display = "none";
-        } else {
-          this.style.display = "flex";
-        }
-      } else {
-        if (scrollHeight === clientHeight) {
-          this.style.display = "none";
-        } else {
-          this.style.display = "flex";
-        }
-      }
     });
   }
 
+  private toDisplayOrNotToDisplay() {
+    const { scrollWidth, scrollHeight, clientWidth, clientHeight } =
+      this._scrollEl;
+    if (this._horizontal) {
+      if (scrollWidth > clientWidth) {
+        this.style.display = "flex";
+      } else {
+        this.style.display = "none";
+      }
+    } else {
+      if (scrollHeight > clientHeight) {
+        this.style.display = "flex";
+      } else {
+        this.style.display = "none";
+      }
+    }
+  }
+
   private onWheel(event: WheelEvent) {
-    event.preventDefault();
     const { deltaX, deltaY } = event;
     if (deltaX && this._horizontal) {
       this._scrollEl.scrollLeft += deltaX;

@@ -15,9 +15,9 @@ class SplashScreen extends HTMLElement {
     this.appendChild(welcome);
 
     const p1 = document.createElement("p");
-    p1.textContent = "I'm creating my own IDE with Electron.js, ";
+    p1.textContent = "I'm creating my own IDE with Electron.js ";
     p1.textContent += "and I'm using this webpage to experiment on ";
-    p1.textContent += "creating an HTML canvas based plaintext editor.";
+    p1.textContent += "an HTML canvas based plaintext editor for it.";
 
     const p2 = document.createElement("p");
     p2.textContent = "**This application won't work properly on your mobile**";

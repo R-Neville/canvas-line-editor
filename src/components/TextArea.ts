@@ -11,6 +11,7 @@ class TextArea extends HTMLElement {
   private _lineElements: LineElement[];
   private _capsOn: boolean;
   private _selecting: boolean;
+  private _current: boolean;
 
   constructor(theme: Theme) {
     super();
@@ -21,6 +22,7 @@ class TextArea extends HTMLElement {
     this._lineElements = [];
     this._capsOn = false;
     this._selecting = false;
+    this._current = false;
 
     applyStyles(this, {
       ...universalStyles,
@@ -36,6 +38,7 @@ class TextArea extends HTMLElement {
       "line-selected",
       this.onLineSelected as EventListener
     );
+    this.addEventListener("line-blurred", this.onLineBlurred as EventListener);
     this.addEventListener("line-changed", this.onLineChanged as EventListener);
     this.addEventListener(
       "new-line-requested",
@@ -63,7 +66,18 @@ class TextArea extends HTMLElement {
       this.onMoveCaretRight as EventListener
     );
     this.addEventListener("mousedown", this.onMouseDown as EventListener);
-    document.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
+    this.addEventListener(
+      "scroll-to-line-end",
+      this.onScrollToLineEnd as EventListener
+    );
+    this.addEventListener(
+      "insert-text-requested",
+      this.onInsertTextRequested as EventListener
+    );
+    document.addEventListener(
+      "keydown",
+      this.onKeyDown.bind(this) as EventListener
+    );
   }
 
   get capsOn() {
@@ -76,6 +90,10 @@ class TextArea extends HTMLElement {
 
   get selecting() {
     return this._selecting;
+  }
+
+  set current(newValue: boolean) {
+    this._current = newValue;
   }
 
   updateTheme(newTheme: Theme) {
@@ -223,6 +241,19 @@ class TextArea extends HTMLElement {
     this.dispatchSelectionChanged();
   }
 
+  private onLineBlurred(event: CustomEvent) {
+    event.stopPropagation();
+    const lineElement = event.target as LineElement;
+    const index = this._lineElements.indexOf(lineElement);
+    const customEvent = new CustomEvent("unhighlight-line-number", {
+      bubbles: true,
+      detail: {
+        index,
+      },
+    });
+    this.dispatchEvent(customEvent);
+  }
+
   private onLineChanged(event: CustomEvent) {
     event.stopPropagation();
     this.clearSelection();
@@ -257,19 +288,7 @@ class TextArea extends HTMLElement {
     const lineElement = event.target as LineElement;
     const lineIndex = this._lineElements.indexOf(lineElement);
     if (lineIndex > 0) {
-      this._lineElements.splice(lineIndex, 1);
-      lineElement.remove();
-      this._lines.splice(lineIndex, 1);
-      this._lineManager.currentLineCount =
-        this._lineManager.currentLineCount - 1;
-      const newLineIndex = lineIndex - 1;
-      const lineAbove = this._lineElements[newLineIndex];
-      const newColIndex = lineAbove && lineAbove.text?.length;
-      this.setCaret(newLineIndex, newColIndex || 0);
-      lineAbove.focusAt(newColIndex || 0);
-      this.dispatchLineCountChanged();
-      this.dispatchContentChanged(newLineIndex, true);
-      this.dispatchSelectionChanged();
+      this.removeLineAtIndex(lineIndex);
     }
   }
 
@@ -376,7 +395,7 @@ class TextArea extends HTMLElement {
 
     const onMouseMove = (event: MouseEvent) => {
       if (event.target === this) return;
-      initLineElement.unHighlight();
+      initLineElement.blur();
       this._selecting = true;
       const { pageX, pageY } = event;
       const targetLineElement = event.target as LineElement;
@@ -479,17 +498,62 @@ class TextArea extends HTMLElement {
     document.addEventListener("mouseup", onMouseUp.bind(this));
   }
 
+  private onScrollToLineEnd(event: CustomEvent) {}
+
   private onKeyDown(event: KeyboardEvent) {
+    if (!this._current) return;
     switch (event.key) {
       case "Backspace":
         this.deleteSelectedText();
+        this.setSelectionStart();
+        this.setSelectionEnd();
         return;
       case "Delete":
         this.deleteSelectedText();
+        this.setSelectionStart();
+        this.setSelectionEnd();
+        return;
+      case "Enter":
+        this.deleteSelectedText();
+        const newIndex = this._lineManager.caret.line + 1;
+        this.addLine("", newIndex);
+        this.setCaret(newIndex, 0);
+        this._lineElements[newIndex].focusAt(0);
+        this.dispatchLineCountChanged();
+        this.dispatchContentChanged(newIndex, false);
+        this.dispatchSelectionChanged();
         return;
       default:
-        return;
+        break;
     }
+
+    if (event.ctrlKey && event.key === "c") {
+      this.copySelectedText();
+      return;
+    }
+
+    if (event.ctrlKey && event.key === "x") {
+      this.copySelectedText();
+      this.deleteSelectedText();
+      return;
+    }
+
+    if (event.key.length === 1) {
+      this.deleteSelectedText();
+      const customEvent = new CustomEvent("insert-text-requested", {
+        bubbles: true,
+        detail: {
+          text: event.key,
+        },
+      });
+      this.dispatchEvent(customEvent);
+    }
+  }
+
+  private onInsertTextRequested(event: CustomEvent) {
+    const { text } = event.detail;
+    const { line, col } = this._lineManager.caret;
+    this._lineElements[line].insertText(text, col);
   }
 
   // Helper methods:
@@ -508,12 +572,150 @@ class TextArea extends HTMLElement {
     if (selectionStart && selectionEnd) {
       if (selectionStart.line === selectionEnd.line) {
         const lineIndex = selectionStart.line;
-        let newText = this._lines[lineIndex].slice(0, selectionStart.col);
-        newText += this._lines[lineIndex].slice(selectionEnd.col);
-        this._lines[lineIndex] = newText;
-        this._lineElements[lineIndex].setText(newText);
+        if (selectionStart.col < selectionEnd.col) {
+          this.deleteTextFromLine(
+            lineIndex,
+            selectionStart.col,
+            selectionEnd.col
+          );
+          this.setCaret(lineIndex, selectionStart.col);
+          this._lineElements[lineIndex].focusAt(selectionStart.col);
+        } else {
+          this.deleteTextFromLine(
+            lineIndex,
+            selectionEnd.col,
+            selectionStart.col
+          );
+          this.setCaret(lineIndex, selectionEnd.col);
+          this._lineElements[lineIndex].focusAt(selectionEnd.col);
+        }
+      } else if (selectionStart.line < selectionEnd.line) {
+        const lastLineIndex = selectionEnd.line;
+        const lastLine = this._lineElements[lastLineIndex];
+        this.deleteTextFromLine(lastLineIndex, 0, selectionEnd.col);
+        if (lastLine.text.length === 0) {
+          this.removeLineAtIndex(lastLineIndex);
+        }
+        let i = lastLineIndex - 1;
+        while (i > selectionStart.line) {
+          this.removeLineAtIndex(i);
+          i--;
+        }
+        const firstLineIndex = selectionStart.line;
+        const firstLine = this._lineElements[firstLineIndex];
+        this.deleteTextFromLine(
+          firstLineIndex,
+          selectionStart.col,
+          firstLine.text.length
+        );
+        this.setCaret(
+          firstLineIndex,
+          this._lineElements[firstLineIndex].text.length
+        );
+        this._lineElements[firstLineIndex].focusAt(
+          this._lineElements[firstLineIndex].text.length
+        );
+      } else {
+        const lastLineIndex = selectionStart.line;
+        const lastLine = this._lineElements[lastLineIndex];
+        this.deleteTextFromLine(lastLineIndex, 0, selectionStart.col);
+        if (lastLine.text.length === 0) {
+          this.removeLineAtIndex(lastLineIndex);
+        }
+        let i = lastLineIndex - 1;
+        while (i > selectionEnd.line) {
+          this.removeLineAtIndex(i);
+          i--;
+        }
+        const firstLineIndex = selectionEnd.line;
+        const firstLine = this._lineElements[firstLineIndex];
+        this.deleteTextFromLine(
+          firstLineIndex,
+          selectionEnd.col,
+          firstLine.text.length
+        );
+        this.setCaret(
+          firstLineIndex,
+          this._lineElements[firstLineIndex].text.length
+        );
+        this._lineElements[firstLineIndex].focusAt(
+          this._lineElements[firstLineIndex].text.length
+        );
       }
     }
+  }
+
+  private removeLineAtIndex(index: number) {
+    const lineElement = this._lineElements.splice(index, 1)[0];
+    lineElement.remove();
+    this._lines.splice(index, 1);
+    this._lineManager.currentLineCount = this._lineManager.currentLineCount - 1;
+    const newLineIndex = index - 1;
+    const lineAbove = this._lineElements[newLineIndex];
+    const newColIndex = lineAbove && lineAbove.text.length;
+    this.setCaret(newLineIndex, newColIndex || 0);
+    lineAbove.focusAt(newColIndex || 0);
+    this.dispatchLineCountChanged();
+    this.dispatchContentChanged(newLineIndex, true);
+    this.dispatchSelectionChanged();
+  }
+
+  private copySelectedText() {
+    const selectionStart = this.selectionStart();
+    const selectionEnd = this.selectionEnd();
+    let text = "";
+    if (selectionStart && selectionEnd) {
+      if (selectionStart.line === selectionEnd.line) {
+        const lineIndex = selectionStart.line;
+        if (selectionStart.col < selectionEnd.col) {
+          text += this._lines[lineIndex].slice(
+            selectionStart.col,
+            selectionEnd.col
+          );
+        } else {
+          text += this._lines[lineIndex].slice(
+            selectionEnd.col,
+            selectionStart.col
+          );
+        }
+      } else if (selectionStart.line < selectionEnd.line) {
+        const startLineIndex = selectionStart.line;
+        const endLineIndex = selectionEnd.line;
+        text += this._lines[startLineIndex].slice(selectionStart.col) + "\n";
+        let i = startLineIndex + 1;
+        while (i < endLineIndex) {
+          text += this._lines[i] + "\n";
+          i++;
+        }
+        text += this._lines[endLineIndex].slice(0, selectionEnd.col);
+      } else {
+        const startLineIndex = selectionEnd.line;
+        const endLineIndex = selectionStart.line;
+        text += this._lines[startLineIndex].slice(selectionEnd.col) + "\n";
+        let i = startLineIndex + 1;
+        while (i < endLineIndex) {
+          text += this._lines[i] + "\n";
+          i++;
+        }
+        text += this._lines[endLineIndex].slice(0, selectionStart.col);
+      }
+    }
+    this.copyToClipboard(text);
+  }
+
+  private deleteTextFromLine(
+    lineIndex: number,
+    colStart: number,
+    colEnd: number
+  ) {
+    const oldText = this._lines[lineIndex];
+    const newText = oldText.slice(0, colStart) + oldText.slice(colEnd);
+    this._lines[lineIndex] = newText;
+    this._lineElements[lineIndex].update(newText);
+  }
+
+  private copyToClipboard(text: string) {
+    window.navigator.clipboard.writeText(text);
   }
 }
 

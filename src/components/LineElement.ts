@@ -8,7 +8,7 @@ class LineElement extends HTMLCanvasElement {
   private _caretPos: number;
   private _textArea: TextArea;
   private _focused: boolean;
-  private _selection: Function|null;
+  private _selection: Function | null;
 
   constructor(parent: TextArea, text: string, theme: ComponentTheme) {
     super();
@@ -74,13 +74,23 @@ class LineElement extends HTMLCanvasElement {
 
   focusAt(index: number) {
     this.focus();
-    this.setCaretPos(index);
+    if (this._text.length < index) {
+      this.setCaretPos(this._text.length);
+    } else {
+      this.setCaretPos(index);
+    }
     this.refresh();
     this.drawCaret();
   }
 
   appendText(text: string) {
     this._text += text;
+  }
+
+  insertText(text: string, col: number) {
+    const newText = this._text.slice(0, col) + text + this._text.slice(col);
+    this.setCaretPos(col + text.length);
+    this.update(newText);
   }
 
   refresh() {
@@ -120,12 +130,16 @@ class LineElement extends HTMLCanvasElement {
     const context = this.getContext("2d");
     if (context) {
       context.fillStyle = this._theme.fg + "55";
-      context.fillRect(
-        2 + start * this.charWidth(),
-        0,
-        (end - start) * this.charWidth(),
-        this.height
-      );
+      if (this._text.length > 0) {
+        context.fillRect(
+          2 + start * this.charWidth(),
+          0,
+          (end - start) * this.charWidth(),
+          this.height
+        );
+      } else {
+        context.fillRect(2, 0, this.charWidth(), this.height);
+      }
     }
   }
 
@@ -136,7 +150,7 @@ class LineElement extends HTMLCanvasElement {
     } as CSSStyleDeclaration);
   }
 
-  private update(text: string) {
+  update(text: string) {
     this.clear();
     this.setText(text);
     const textWidth = this.textWidth();
@@ -207,6 +221,10 @@ class LineElement extends HTMLCanvasElement {
     applyStyles(this, {
       backgroundColor: "transparent",
     } as CSSStyleDeclaration);
+    const customEvent = new CustomEvent("line-blurred", {
+      bubbles: true,
+    });
+    this.dispatchEvent(customEvent);
   }
 
   private onKeyDown(event: KeyboardEvent) {
@@ -297,7 +315,7 @@ class LineElement extends HTMLCanvasElement {
           this.setCaretPos(Math.round(textWidth / charWidth));
         }
         this.drawCaret();
-      } 
+      }
       this.removeEventListener("mouseup", onMouseUp as EventListener);
     };
     this.dispatchLineSelected();

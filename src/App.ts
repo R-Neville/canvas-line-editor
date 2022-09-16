@@ -4,7 +4,11 @@ import Editor from "./components/Editor";
 import SideBar from "./components/SideBar";
 import MenuOption from "./components/MenuOption";
 import Icon from "./components/Icon";
-import { buildFileExplorerIconSVG, buildPlusIconSVG } from "./icons";
+import {
+  buildFileExplorerIconSVG,
+  buildPlusIconSVG,
+  buildSettingsIconSVG,
+} from "./icons";
 import universalStyles from "./universalStyles";
 import Tab from "./components/Tab";
 import SplashScreen from "./components/SplashScreen";
@@ -101,6 +105,17 @@ class EditorView extends HTMLElement {
     );
     menuBar.appendChild(newEditorOption);
 
+    const settingsIcon = new Icon(buildSettingsIconSVG(), "30px", true);
+    const settingsOption = new MenuOption(
+      settingsIcon,
+      () => {
+        console.log("settings");
+      },
+      this._theme.menuBar
+    );
+    settingsOption.style.marginLeft = "auto";
+    menuBar.appendChild(settingsOption);
+
     return menuBar;
   }
 
@@ -133,9 +148,14 @@ class EditorView extends HTMLElement {
     this._currentIndex += 1;
     this._editors.splice(this._currentIndex, 0, editor);
     this._contentWrapper.appendChild(editor);
+    editor.show();
     const tab = new Tab("New Editor", this._theme.sideBar);
     tab.highlight();
     this._sideBar.addTabAtIndex(tab, this._currentIndex);
+    if (this._editors.length > 1) {
+      this._sideBar.show();
+      this._sideBarVisible = true;
+    }
   }
 
   private showEditorAtIndex(index: number) {
