@@ -28,10 +28,6 @@ class LineManager {
     return this._col;
   }
 
-  set col(value: number) {
-    this._col = value;
-  }
-
   get currentLineCount() {
     return this._currentLineCount;
   }
