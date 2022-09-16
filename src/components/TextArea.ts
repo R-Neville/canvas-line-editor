@@ -70,6 +70,10 @@ class TextArea extends HTMLElement {
       "scroll-to-line-end",
       this.onScrollToLineEnd as EventListener
     );
+    this.addEventListener(
+      "insert-text-requested",
+      this.onInsertTextRequested as EventListener
+    );
     document.addEventListener(
       "keydown",
       this.onKeyDown.bind(this) as EventListener
@@ -536,10 +540,20 @@ class TextArea extends HTMLElement {
 
     if (event.key.length === 1) {
       this.deleteSelectedText();
-      const { line, col } = this._lineManager.caret;
-      this._lineElements[line].insertText(event.key, col);
-      this._lineElements[line].focusAt(col + 1);
+      const customEvent = new CustomEvent("insert-text-requested", {
+        bubbles: true,
+        detail: {
+          text: event.key,
+        },
+      });
+      this.dispatchEvent(customEvent);
     }
+  }
+
+  private onInsertTextRequested(event: CustomEvent) {
+    const { text } = event.detail;
+    const { line, col } = this._lineManager.caret;
+    this._lineElements[line].insertText(text, col);
   }
 
   // Helper methods:
@@ -559,30 +573,26 @@ class TextArea extends HTMLElement {
       if (selectionStart.line === selectionEnd.line) {
         const lineIndex = selectionStart.line;
         if (selectionStart.col < selectionEnd.col) {
-          this._lineElements[lineIndex].update(
-            this.deleteTextFromLine(
-              lineIndex,
-              selectionStart.col,
-              selectionEnd.col
-            )
+          this.deleteTextFromLine(
+            lineIndex,
+            selectionStart.col,
+            selectionEnd.col
           );
+          this.setCaret(lineIndex, selectionStart.col);
           this._lineElements[lineIndex].focusAt(selectionStart.col);
         } else {
-          this._lineElements[lineIndex].update(
-            this.deleteTextFromLine(
-              lineIndex,
-              selectionEnd.col,
-              selectionStart.col
-            )
+          this.deleteTextFromLine(
+            lineIndex,
+            selectionEnd.col,
+            selectionStart.col
           );
+          this.setCaret(lineIndex, selectionEnd.col);
           this._lineElements[lineIndex].focusAt(selectionEnd.col);
         }
       } else if (selectionStart.line < selectionEnd.line) {
         const lastLineIndex = selectionEnd.line;
         const lastLine = this._lineElements[lastLineIndex];
-        lastLine.update(
-          this.deleteTextFromLine(lastLineIndex, 0, selectionEnd.col)
-        );
+        this.deleteTextFromLine(lastLineIndex, 0, selectionEnd.col);
         if (lastLine.text.length === 0) {
           this.removeLineAtIndex(lastLineIndex);
         }
@@ -593,29 +603,22 @@ class TextArea extends HTMLElement {
         }
         const firstLineIndex = selectionStart.line;
         const firstLine = this._lineElements[firstLineIndex];
-        firstLine.update(
-          this.deleteTextFromLine(
-            firstLineIndex,
-            selectionStart.col,
-            firstLine.text.length
-          )
+        this.deleteTextFromLine(
+          firstLineIndex,
+          selectionStart.col,
+          firstLine.text.length
         );
-        if (firstLine.text.length === 0 && this._lines.length > 1) {
-          this.removeLineAtIndex(firstLineIndex);
-          this._lineElements[firstLineIndex - 1].focusAt(
-            this._lineElements[firstLineIndex - 1].text.length
-          );
-        } else {
-          this._lineElements[firstLineIndex].focusAt(
-            this._lineElements[firstLineIndex].text.length
-          );
-        }
+        this.setCaret(
+          firstLineIndex,
+          this._lineElements[firstLineIndex].text.length
+        );
+        this._lineElements[firstLineIndex].focusAt(
+          this._lineElements[firstLineIndex].text.length
+        );
       } else {
         const lastLineIndex = selectionStart.line;
         const lastLine = this._lineElements[lastLineIndex];
-        lastLine.update(
-          this.deleteTextFromLine(lastLineIndex, 0, selectionStart.col)
-        );
+        this.deleteTextFromLine(lastLineIndex, 0, selectionStart.col);
         if (lastLine.text.length === 0) {
           this.removeLineAtIndex(lastLineIndex);
         }
@@ -626,23 +629,18 @@ class TextArea extends HTMLElement {
         }
         const firstLineIndex = selectionEnd.line;
         const firstLine = this._lineElements[firstLineIndex];
-        firstLine.update(
-          this.deleteTextFromLine(
-            firstLineIndex,
-            selectionEnd.col,
-            firstLine.text.length
-          )
+        this.deleteTextFromLine(
+          firstLineIndex,
+          selectionEnd.col,
+          firstLine.text.length
         );
-        if (firstLine.text.length === 0 && this._lines.length > 1) {
-          this.removeLineAtIndex(firstLineIndex);
-          this._lineElements[firstLineIndex - 1].focusAt(
-            this._lineElements[firstLineIndex - 1].text.length
-          );
-        } else {
-          this._lineElements[firstLineIndex].focusAt(
-            this._lineElements[firstLineIndex].text.length
-          );
-        }
+        this.setCaret(
+          firstLineIndex,
+          this._lineElements[firstLineIndex].text.length
+        );
+        this._lineElements[firstLineIndex].focusAt(
+          this._lineElements[firstLineIndex].text.length
+        );
       }
     }
   }
@@ -713,7 +711,7 @@ class TextArea extends HTMLElement {
     const oldText = this._lines[lineIndex];
     const newText = oldText.slice(0, colStart) + oldText.slice(colEnd);
     this._lines[lineIndex] = newText;
-    return newText;
+    this._lineElements[lineIndex].update(newText);
   }
 
   private copyToClipboard(text: string) {

@@ -89,6 +89,7 @@ class LineElement extends HTMLCanvasElement {
 
   insertText(text: string, col: number) {
     const newText = this._text.slice(0, col) + text + this._text.slice(col);
+    this.setCaretPos(col + text.length);
     this.update(newText);
   }
 
