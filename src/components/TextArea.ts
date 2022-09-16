@@ -523,6 +523,17 @@ class TextArea extends HTMLElement {
         break;
     }
 
+    if (event.ctrlKey && event.key === "c") {
+      this.copySelectedText();
+      return;
+    }
+
+    if (event.ctrlKey && event.key === "x") {
+      this.copySelectedText();
+      this.deleteSelectedText();
+      return;
+    }
+
     if (event.key.length === 1) {
       this.deleteSelectedText();
       const { line, col } = this._lineManager.caret;
@@ -555,6 +566,7 @@ class TextArea extends HTMLElement {
               selectionEnd.col
             )
           );
+          this._lineElements[lineIndex].focusAt(selectionStart.col);
         } else {
           this._lineElements[lineIndex].update(
             this.deleteTextFromLine(
@@ -563,6 +575,7 @@ class TextArea extends HTMLElement {
               selectionStart.col
             )
           );
+          this._lineElements[lineIndex].focusAt(selectionEnd.col);
         }
       } else if (selectionStart.line < selectionEnd.line) {
         const lastLineIndex = selectionEnd.line;
@@ -649,6 +662,49 @@ class TextArea extends HTMLElement {
     this.dispatchSelectionChanged();
   }
 
+  private copySelectedText() {
+    const selectionStart = this.selectionStart();
+    const selectionEnd = this.selectionEnd();
+    let text = "";
+    if (selectionStart && selectionEnd) {
+      if (selectionStart.line === selectionEnd.line) {
+        const lineIndex = selectionStart.line;
+        if (selectionStart.col < selectionEnd.col) {
+          text += this._lines[lineIndex].slice(
+            selectionStart.col,
+            selectionEnd.col
+          );
+        } else {
+          text += this._lines[lineIndex].slice(
+            selectionEnd.col,
+            selectionStart.col
+          );
+        }
+      } else if (selectionStart.line < selectionEnd.line) {
+        const startLineIndex = selectionStart.line;
+        const endLineIndex = selectionEnd.line;
+        text += this._lines[startLineIndex].slice(selectionStart.col) + "\n";
+        let i = startLineIndex + 1;
+        while (i < endLineIndex) {
+          text += this._lines[i] + "\n";
+          i++;
+        }
+        text += this._lines[endLineIndex].slice(0, selectionEnd.col);
+      } else {
+        const startLineIndex = selectionEnd.line;
+        const endLineIndex = selectionStart.line;
+        text += this._lines[startLineIndex].slice(selectionEnd.col) + "\n";
+        let i = startLineIndex + 1;
+        while (i < endLineIndex) {
+          text += this._lines[i] + "\n";
+          i++;
+        }
+        text += this._lines[endLineIndex].slice(0, selectionStart.col);
+      }
+    }
+    this.copyToClipboard(text);
+  }
+
   private deleteTextFromLine(
     lineIndex: number,
     colStart: number,
@@ -658,6 +714,10 @@ class TextArea extends HTMLElement {
     const newText = oldText.slice(0, colStart) + oldText.slice(colEnd);
     this._lines[lineIndex] = newText;
     return newText;
+  }
+
+  private copyToClipboard(text: string) {
+    window.navigator.clipboard.writeText(text);
   }
 }
 
