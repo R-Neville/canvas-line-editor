@@ -45,6 +45,10 @@ class Tab extends HTMLElement {
     this.addEventListener("mouseleave", this.onMouseLeave);
   }
 
+  get name() {
+    return this._name;
+  }
+
   highlight() {
     this._current = true;
     this.style.backgroundColor = this._theme.highlightBg;

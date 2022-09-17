@@ -1,7 +1,6 @@
 import { applyStyles } from "../helpers";
 import universalStyles from "../universalStyles";
 import Theme from "../themes/Theme";
-import ComponentTheme from "../themes/ComponentTheme";
 import ResizeHandle from "./ResizeHandle";
 import Tab from "./Tab";
 import ScrollView from "./ScrollView";
@@ -79,6 +78,10 @@ class SideBar extends HTMLElement {
 
   unHighlightTabAtIndex(index: number) {
     this._tabs[index].unHighlight();
+  }
+
+  getTabNameAtIndex(index: number) {
+    return this._tabs[index].name;
   }
 
   private showNoEditors() {

@@ -22,6 +22,7 @@ class EditorView extends HTMLElement {
   private _contentWrapper: HTMLDivElement;
   private _sideBar: SideBar;
   private _splashScreen: SplashScreen;
+  private _editorNames: Set<string>;
 
   constructor(theme: Theme) {
     super();
@@ -35,6 +36,7 @@ class EditorView extends HTMLElement {
     this._sideBar = new SideBar(this._theme);
     this._splashScreen = new SplashScreen(this._theme.splashScreen);
     this._splashScreen.style.gridColumn = "2";
+    this._editorNames = new Set();
 
     this.appendChild(this._menuBar);
     this.appendChild(this._contentWrapper);
@@ -149,13 +151,28 @@ class EditorView extends HTMLElement {
     this._editors.splice(this._currentIndex, 0, editor);
     this._contentWrapper.appendChild(editor);
     editor.show();
-    const tab = new Tab("New Editor", this._theme.sideBar);
+    const editorName = this.generateEditorName();
+    this._editorNames.add(editorName);
+    const tab = new Tab(editorName, this._theme.sideBar);
     tab.highlight();
     this._sideBar.addTabAtIndex(tab, this._currentIndex);
     if (this._editors.length > 1) {
       this._sideBar.show();
       this._sideBarVisible = true;
     }
+  }
+
+  private generateEditorName() {
+    let i = this._editors.length || 1;
+    let editorName: string | null = null;
+    while (!editorName) {
+      const candidate = `Editor-${i}`;
+      if (!this._editorNames.has(candidate)) {
+        editorName = candidate;
+      }
+      i++;
+    }
+    return editorName;
   }
 
   private showEditorAtIndex(index: number) {
@@ -172,9 +189,11 @@ class EditorView extends HTMLElement {
   private closeEditorAtIndex(index: number) {
     const editor = this._editors.splice(index, 1)[0];
     editor.hide();
+    const editorName = this._sideBar.getTabNameAtIndex(index);
+    this._editorNames.delete(editorName);
     this._sideBar.removeTabAtIndex(index);
     editor.remove();
-    if (this._currentIndex > this._editors.length - 1) {
+    if (this._currentIndex > 0 || this._editors.length === 0) {
       this._currentIndex--;
     }
     if (this._currentIndex >= 0) {
