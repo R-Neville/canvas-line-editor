@@ -1,21 +1,17 @@
 import { applyStyles } from "../helpers";
 import universalStyles from "../universalStyles";
-import ComponentTheme from "../themes/ComponentTheme";
 
 class ResizeHandle extends HTMLElement {
-  private _theme: ComponentTheme;
 
-  constructor(theme: ComponentTheme) {
+  constructor() {
     super();
-
-    this._theme = theme;
 
     applyStyles(this, {
       ...universalStyles,
       width: "3px",
       minWidth: "3px",
       height: "100%",
-      backgroundColor: this._theme.fg,
+      backgroundColor: window.theme.sideBar.fg,
       cursor: "ew-resize",
     } as CSSStyleDeclaration);
 

@@ -1,42 +1,37 @@
-import ComponentTheme from '../themes/ComponentTheme';
-import { applyStyles } from '../helpers';
-import universalStyles from '../universalStyles';
+import { applyStyles } from "../helpers";
+import universalStyles from "../universalStyles";
 
 class ContextMenuOption extends HTMLElement {
-  private _theme: ComponentTheme;
 
-  constructor(text: string, action: EventListener, theme: ComponentTheme) {
+  constructor(text: string, action: EventListener) {
     super();
 
     this.textContent = text;
-    this._theme = theme;
 
     applyStyles(this, {
       ...universalStyles,
-      padding: '5px',
-      width: '100%',
-      backgroundColor: 'inherit',
+      padding: "5px",
+      width: "100%",
+      backgroundColor: "inherit",
       fontSize: "1em",
-      color: this._theme.fg,
-      cursor: 'pointer'
+      color: window.theme.contextMenu.fg,
+      cursor: "pointer",
     } as CSSStyleDeclaration);
 
-    this.addEventListener('click', action);
-    this.addEventListener('mouseenter', this.onMouseEnter);
-    this.addEventListener('mouseleave', this.onMouseLeave);
+    this.addEventListener("click", action);
+    this.addEventListener("mouseenter", this.onMouseEnter);
+    this.addEventListener("mouseleave", this.onMouseLeave);
   }
 
   private onMouseEnter() {
-    if (this._theme) {
-      this.style.backgroundColor = this._theme.highlightBg;
-    }
+    this.style.backgroundColor = window.theme.contextMenu.highlightBg;
   }
 
   private onMouseLeave() {
-    this.style.backgroundColor = 'inherit';
+    this.style.backgroundColor = "inherit";
   }
 }
 
-customElements.define('context-menu-option', ContextMenuOption);
+customElements.define("context-menu-option", ContextMenuOption);
 
 export default ContextMenuOption;

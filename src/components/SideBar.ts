@@ -1,6 +1,5 @@
 import { applyStyles } from "../helpers";
 import universalStyles from "../universalStyles";
-import Theme from "../themes/Theme";
 import ResizeHandle from "./ResizeHandle";
 import Tab from "./Tab";
 import ScrollView from "./ScrollView";
@@ -8,20 +7,18 @@ import ScrollView from "./ScrollView";
 const MIN_WIDTH = 200;
 
 class SideBar extends HTMLElement {
-  private _theme: Theme;
   private _tabs: Tab[];
   private _scrollView: ScrollView;
   private _contentWrapper: HTMLDivElement;
   private _resizeHandle: ResizeHandle;
 
-  constructor(theme: Theme) {
+  constructor() {
     super();
 
-    this._theme = theme;
     this._tabs = [];
     this._contentWrapper = this.buildContentWrapper();
-    this._resizeHandle = new ResizeHandle(this._theme.sideBar);
-    this._scrollView = new ScrollView(this._theme);
+    this._resizeHandle = new ResizeHandle();
+    this._scrollView = new ScrollView();
     this._scrollView.addVerticalScrollBar(this._contentWrapper, 10);
     this._scrollView.setContent(this._contentWrapper);
     
@@ -35,12 +32,13 @@ class SideBar extends HTMLElement {
       overflow: "hidden",
       width: "200px",
       height: "100%",
-      backgroundColor: this._theme.sideBar.bg,
+      backgroundColor: window.theme.sideBar.bg,
     } as CSSStyleDeclaration);
 
     this.addEventListener("resize-handle-used", this.onResizeHandleUsed as EventListener);
     this.addEventListener("tab-clicked", this.onTabClicked as EventListener);
     this.addEventListener("close-button-clicked", this.onCloseButtonClicked as EventListener);
+    this.addEventListener("tab-context-menu", this.onTabContextMenu as EventListener);
 
     this.showNoEditors();
   }
@@ -84,13 +82,17 @@ class SideBar extends HTMLElement {
     return this._tabs[index].name;
   }
 
+  setTabNameAtIndex(index: number, newName: string) {
+    this._tabs[index].name = newName;
+  }
+
   private showNoEditors() {
     const p = document.createElement("p");
     p.textContent = "No Open Editors";
     applyStyles(p, {
       ...universalStyles,
       textAlign: "center",
-      color: this._theme.sideBar.fg,
+      color: window.theme.sideBar.fg,
     } as CSSStyleDeclaration);
     this._contentWrapper.appendChild(p);
   }
@@ -143,6 +145,24 @@ class SideBar extends HTMLElement {
       }
     })
     this.dispatchEvent(customEvent);
+  }
+
+  private onTabContextMenu(event: CustomEvent) {
+    event.stopPropagation();
+    const { pageX, pageY } = event.detail;
+    const tab = event.target as Tab;
+    const index = this._tabs.indexOf(tab);
+    const customEvent = new CustomEvent("show-tab-context-menu", {
+      bubbles: true,
+      detail: {
+        index,
+        oldName: tab.name,
+        pageX,
+        pageY,
+      }
+    });
+    this.dispatchEvent(customEvent);
+
   }
 }
 

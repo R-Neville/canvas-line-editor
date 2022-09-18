@@ -1,11 +1,9 @@
 import { applyStyles } from "../helpers";
-import Theme from "../themes/Theme";
 import universalStyles from "../universalStyles";
 import LineManager, { LMSelection } from "../LineManager";
 import LineElement from "./LineElement";
 
 class TextArea extends HTMLElement {
-  private _theme: Theme;
   private _lineManager: LineManager;
   private _lines: string[];
   private _lineElements: LineElement[];
@@ -13,10 +11,9 @@ class TextArea extends HTMLElement {
   private _selecting: boolean;
   private _current: boolean;
 
-  constructor(theme: Theme) {
+  constructor() {
     super();
 
-    this._theme = theme;
     this._lineManager = new LineManager();
     this._lines = [];
     this._lineElements = [];
@@ -96,13 +93,6 @@ class TextArea extends HTMLElement {
     this._current = newValue;
   }
 
-  updateTheme(newTheme: Theme) {
-    this._theme = newTheme;
-    this._lineElements.forEach((el) => {
-      el.updateTheme(this._theme.lineElement);
-    });
-  }
-
   appendLine(line: string) {
     const newLineElement = this.buildLine(line);
     this._lines.push(line);
@@ -126,7 +116,7 @@ class TextArea extends HTMLElement {
   }
 
   private buildLine(text: string) {
-    const lineElement = new LineElement(this, text, this._theme.lineElement);
+    const lineElement = new LineElement(this, text);
     return lineElement;
   }
 
@@ -538,7 +528,10 @@ class TextArea extends HTMLElement {
       return;
     }
 
-    if (event.key.length === 1) {
+    const selectionStart = this.selectionStart();
+    const selectionEnd = this.selectionEnd();
+
+    if (selectionStart && selectionEnd && event.key.length === 1) {
       this.deleteSelectedText();
       const customEvent = new CustomEvent("insert-text-requested", {
         bubbles: true,

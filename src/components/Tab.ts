@@ -1,22 +1,19 @@
 import { applyStyles } from "../helpers";
 import { buildCloseIconSVG } from "../icons";
-import ComponentTheme from "../themes/ComponentTheme";
 import universalStyles from "../universalStyles";
 import Icon from "./Icon";
 
 class Tab extends HTMLElement {
-  private _theme: ComponentTheme;
   private _current: boolean;
   private _name: string;
   private _label: HTMLLabelElement;
   private _closeButton: HTMLButtonElement;
 
-  constructor(text: string, theme: ComponentTheme) {
+  constructor(text: string) {
     super();
 
     this.title = text;
     this._name = text;
-    this._theme = theme;
     this._current = false;
     this._label = this.buildLabel();
     this._label.textContent = text;
@@ -31,7 +28,7 @@ class Tab extends HTMLElement {
       justifyContent: "space-between",
       padding: "0.5em 1em",
       fontSize: "1em",
-      color: this._theme.fg,
+      color: window.theme.sideBar.fg,
       cursor: "pointer",
     } as CSSStyleDeclaration);
 
@@ -43,15 +40,22 @@ class Tab extends HTMLElement {
     });
     this.addEventListener("mouseenter", this.onMouseEnter);
     this.addEventListener("mouseleave", this.onMouseLeave);
+    this.addEventListener("contextmenu", this.onContextMenu as EventListener);
   }
 
   get name() {
     return this._name;
   }
 
+  set name(newName: string) {
+    this._name = newName;
+    this.title = newName;
+    this._label.textContent = newName;
+  }
+
   highlight() {
     this._current = true;
-    this.style.backgroundColor = this._theme.highlightBg;
+    this.style.backgroundColor = window.theme.sideBar.highlightBg;
   }
 
   unHighlight() {
@@ -61,7 +65,7 @@ class Tab extends HTMLElement {
 
   private onMouseEnter() {
     if (!this._current) {
-      this.style.backgroundColor = this._theme.highlightBg;
+      this.style.backgroundColor = window.theme.sideBar.highlightBg;
     }
   }
 
@@ -76,7 +80,7 @@ class Tab extends HTMLElement {
     applyStyles(label, {
       overflowX: "hidden",
       fontSize: "1em",
-      color: this._theme.fg,
+      color: window.theme.sideBar.fg,
       whiteSpace: "nowrap",
       textOverflow: "ellipsis",
       cursor: "pointer",
@@ -95,11 +99,11 @@ class Tab extends HTMLElement {
       height: "20px",
       border: "none",
       borderRadius: "3px",
-      backgroundColor: this._theme.bg,
+      backgroundColor: window.theme.sideBar.bg,
       cursor: "pointer",
     } as CSSStyleDeclaration);
     const icon = new Icon(buildCloseIconSVG(), "10px", true);
-    icon.setColor(this._theme.fg);
+    icon.setColor(window.theme.sideBar.fg);
     button.appendChild(icon);
     button.addEventListener("click", () => {
       const customEvent = new CustomEvent("close-button-clicked", {
@@ -108,6 +112,18 @@ class Tab extends HTMLElement {
       this.dispatchEvent(customEvent);
     });
     return button;
+  }
+
+  private onContextMenu(event: MouseEvent) {
+    const { pageX, pageY } = event;
+    const customEvent = new CustomEvent("tab-context-menu", {
+      bubbles: true,
+      detail: {
+        pageX,
+        pageY,
+      }
+    });
+    this.dispatchEvent(customEvent);
   }
 }
 
