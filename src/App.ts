@@ -23,8 +23,8 @@ class EditorView extends HTMLElement {
   private _sideBar: SideBar;
   private _splashScreen: SplashScreen;
   private _editorNames: Set<string>;
-  private _contextMenu: ContextMenu|null;
-  private _modal: Modal|null;
+  private _contextMenu: ContextMenu | null;
+  private _modal: Modal | null;
 
   constructor() {
     super();
@@ -64,8 +64,16 @@ class EditorView extends HTMLElement {
       "close-editor-requested",
       this.onCloseEditorRequested as EventListener
     );
-    this.addEventListener("show-tab-context-menu", this.onShowTabContextMenu as EventListener);
-    this.addEventListener("rename-editor-requested", this.onRenameEditorRequested as EventListener);
+    this.addEventListener(
+      "show-tab-context-menu",
+      this.onShowTabContextMenu as EventListener
+    );
+    this.addEventListener(
+      "rename-editor-requested",
+      this.onRenameEditorRequested as EventListener
+    );
+    this.addEventListener("tab-moved", this.onTabMoved as EventListener);
+    document.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
   }
 
   openEditor() {
@@ -87,36 +95,27 @@ class EditorView extends HTMLElement {
     } as CSSStyleDeclaration);
 
     const sideBarIcon = new Icon(buildFileExplorerIconSVG(), "30px", true);
-    const toggleSideBarOption = new MenuOption(
-      sideBarIcon,
-      () => {
-        if (this._sideBarVisible) {
-          this._sideBar.hide();
-          this._sideBarVisible = false;
-        } else {
-          this._sideBar.show();
-          this._sideBarVisible = true;
-        }
+    const toggleSideBarOption = new MenuOption(sideBarIcon, () => {
+      if (this._sideBarVisible) {
+        this._sideBar.hide();
+        this._sideBarVisible = false;
+      } else {
+        this._sideBar.show();
+        this._sideBarVisible = true;
       }
-    );
+    });
     menuBar.appendChild(toggleSideBarOption);
 
     const newEditorIcon = new Icon(buildPlusIconSVG(), "30px", true);
-    const newEditorOption = new MenuOption(
-      newEditorIcon,
-      () => {
-        this.newEditor();
-      }
-    );
+    const newEditorOption = new MenuOption(newEditorIcon, () => {
+      this.newEditor();
+    });
     menuBar.appendChild(newEditorOption);
 
     const settingsIcon = new Icon(buildSettingsIconSVG(), "30px", true);
-    const settingsOption = new MenuOption(
-      settingsIcon,
-      () => {
-        console.log("settings");
-      }
-    );
+    const settingsOption = new MenuOption(settingsIcon, () => {
+      console.log("settings");
+    });
     settingsOption.style.marginLeft = "auto";
     menuBar.appendChild(settingsOption);
 
@@ -244,8 +243,8 @@ class EditorView extends HTMLElement {
         bubbles: true,
         detail: {
           index,
-          oldName
-        }
+          oldName,
+        },
       });
       this.dispatchEvent(customEvent);
     });
@@ -267,7 +266,7 @@ class EditorView extends HTMLElement {
       }
       if (this._editorNames.has(value)) {
         modal.lock();
-        return;        
+        return;
       }
       modal.unlock();
     };
@@ -286,6 +285,27 @@ class EditorView extends HTMLElement {
     });
     this._modal = modal;
     this.appendChild(modal);
+  }
+
+  private onTabMoved(event: CustomEvent) {
+    const { oldIndex, newIndex } = event.detail;
+    this._editors[this._currentIndex].hide();
+    const editorToMove = this._editors[oldIndex];
+    this._editors.splice(oldIndex, 1);
+    this._editors.splice(newIndex, 0, editorToMove);
+    this._currentIndex = newIndex;
+    this._editors[this._currentIndex].show();
+    this._sideBar.highlightTabAtIndex(this._currentIndex);
+  }
+
+  private onKeyDown(event: KeyboardEvent) {
+    if (event.ctrlKey && event.code === "Space") {
+      if (this._currentIndex < this._editors.length - 1) {
+        this.showEditorAtIndex(this._currentIndex + 1);
+      } else {
+        this.showEditorAtIndex(0);
+      }
+    }
   }
 }
 

@@ -12,6 +12,7 @@ class Tab extends HTMLElement {
   constructor(text: string) {
     super();
 
+    this.draggable = true;
     this.title = text;
     this._name = text;
     this._current = false;
@@ -26,7 +27,9 @@ class Tab extends HTMLElement {
       ...universalStyles,
       display: "flex",
       justifyContent: "space-between",
+      potition: "relative",
       padding: "0.5em 1em",
+      border: "1px solid transparent",
       fontSize: "1em",
       color: window.theme.sideBar.fg,
       cursor: "pointer",
@@ -41,6 +44,12 @@ class Tab extends HTMLElement {
     this.addEventListener("mouseenter", this.onMouseEnter);
     this.addEventListener("mouseleave", this.onMouseLeave);
     this.addEventListener("contextmenu", this.onContextMenu as EventListener);
+    this.addEventListener("dragstart", this.onDragStart as EventListener);
+    this.addEventListener("dragend", this.onDragEnd as EventListener);
+    this.addEventListener("dragover", this.onDragOver as EventListener);
+    this.addEventListener("dragenter", this.onDragEnter as EventListener);
+    this.addEventListener("dragleave", this.onDragLeave as EventListener);
+    this.addEventListener("drop", this.onDrop as EventListener);
   }
 
   get name() {
@@ -124,6 +133,43 @@ class Tab extends HTMLElement {
       }
     });
     this.dispatchEvent(customEvent);
+  }
+
+  private onDragStart(event: DragEvent) {
+    this.style.opacity = "0.4";
+
+    event.dataTransfer?.setData("text", this._name);
+  }
+
+  private onDragEnd(event: DragEvent) {
+    this.style.opacity = "1"
+  }
+
+  private onDragOver(event: DragEvent) {
+    event.preventDefault();
+  }
+
+  private onDragEnter(event: DragEvent) {
+    this.style.borderColor = window.theme.sideBar.fg;
+  }
+
+  private onDragLeave(event: DragEvent) {
+    this.style.borderColor = "transparent";
+  }
+
+  private onDrop(event: DragEvent) {
+    event.stopPropagation();
+    this.style.borderColor = "transparent";
+    const droppedName = event.dataTransfer?.getData("text");
+    if (droppedName) {
+      const customEvent = new CustomEvent("move-tab", {
+        bubbles: true,
+        detail: {
+          droppedName,
+        },
+      });
+      this.dispatchEvent(customEvent);
+    }
   }
 }
 
