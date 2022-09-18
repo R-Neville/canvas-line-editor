@@ -21,7 +21,7 @@ class SideBar extends HTMLElement {
     this._scrollView = new ScrollView();
     this._scrollView.addVerticalScrollBar(this._contentWrapper, 10);
     this._scrollView.setContent(this._contentWrapper);
-    
+
     this.appendChild(this._scrollView);
     this.appendChild(this._resizeHandle);
 
@@ -30,15 +30,26 @@ class SideBar extends HTMLElement {
       display: "none",
       gridTemplateColumns: "1fr max-content",
       overflow: "hidden",
+      position: "relative",
       width: "200px",
       height: "100%",
       backgroundColor: window.theme.sideBar.bg,
     } as CSSStyleDeclaration);
 
-    this.addEventListener("resize-handle-used", this.onResizeHandleUsed as EventListener);
+    this.addEventListener(
+      "resize-handle-used",
+      this.onResizeHandleUsed as EventListener
+    );
     this.addEventListener("tab-clicked", this.onTabClicked as EventListener);
-    this.addEventListener("close-button-clicked", this.onCloseButtonClicked as EventListener);
-    this.addEventListener("tab-context-menu", this.onTabContextMenu as EventListener);
+    this.addEventListener(
+      "close-button-clicked",
+      this.onCloseButtonClicked as EventListener
+    );
+    this.addEventListener(
+      "tab-context-menu",
+      this.onTabContextMenu as EventListener
+    );
+    this.addEventListener("move-tab", this.onMoveTab as EventListener);
 
     this.showNoEditors();
   }
@@ -129,8 +140,8 @@ class SideBar extends HTMLElement {
       bubbles: true,
       detail: {
         index,
-      }
-    })
+      },
+    });
     this.dispatchEvent(customEvent);
   }
 
@@ -142,8 +153,8 @@ class SideBar extends HTMLElement {
       bubbles: true,
       detail: {
         index,
-      }
-    })
+      },
+    });
     this.dispatchEvent(customEvent);
   }
 
@@ -159,10 +170,30 @@ class SideBar extends HTMLElement {
         oldName: tab.name,
         pageX,
         pageY,
-      }
+      },
     });
     this.dispatchEvent(customEvent);
+  }
 
+  private onMoveTab(event: CustomEvent) {
+    event.stopPropagation();
+    this._tabs.forEach(t => t.unHighlight());
+    const { droppedName } = event.detail;
+    const tabToMove = this._tabs.filter(t => t.name === droppedName)[0];
+    const oldIndex = this._tabs.indexOf(tabToMove);
+    this._tabs.splice(oldIndex, 1);
+    tabToMove.remove();
+    const targetIndex = this._tabs.indexOf(event.target as Tab);
+    const newIndex = targetIndex;
+    this.addTabAtIndex(tabToMove, newIndex);
+    const customEvent = new CustomEvent("tab-moved", {
+      bubbles: true,
+      detail: {
+        oldIndex,
+        newIndex,
+      },
+    });
+    this.dispatchEvent(customEvent);
   }
 }
 
