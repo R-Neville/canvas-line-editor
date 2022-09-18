@@ -1,5 +1,4 @@
 import { applyStyles } from "./helpers";
-import Theme from "./themes/Theme";
 import Editor from "./components/Editor";
 import SideBar from "./components/SideBar";
 import MenuOption from "./components/MenuOption";
@@ -12,9 +11,10 @@ import {
 import universalStyles from "./universalStyles";
 import Tab from "./components/Tab";
 import SplashScreen from "./components/SplashScreen";
+import ContextMenu from "./components/ContextMenu";
+import Modal from "./components/Modal";
 
 class EditorView extends HTMLElement {
-  private _theme: Theme;
   private _editors: Editor[];
   private _currentIndex: number;
   private _sideBarVisible: boolean;
@@ -22,19 +22,24 @@ class EditorView extends HTMLElement {
   private _contentWrapper: HTMLDivElement;
   private _sideBar: SideBar;
   private _splashScreen: SplashScreen;
+  private _editorNames: Set<string>;
+  private _contextMenu: ContextMenu|null;
+  private _modal: Modal|null;
 
-  constructor(theme: Theme) {
+  constructor() {
     super();
 
-    this._theme = theme;
     this._editors = [];
     this._currentIndex = -1;
     this._sideBarVisible = false;
     this._menuBar = this.buildMenuBar();
     this._contentWrapper = this.buildContentWrapper();
-    this._sideBar = new SideBar(this._theme);
-    this._splashScreen = new SplashScreen(this._theme.splashScreen);
+    this._sideBar = new SideBar();
+    this._splashScreen = new SplashScreen();
     this._splashScreen.style.gridColumn = "2";
+    this._editorNames = new Set();
+    this._contextMenu = null;
+    this._modal = null;
 
     this.appendChild(this._menuBar);
     this.appendChild(this._contentWrapper);
@@ -47,7 +52,7 @@ class EditorView extends HTMLElement {
       display: "grid",
       gridTemplateRows: "max-content 1fr",
       height: "100vh",
-      backgroundColor: this._theme.app.bg,
+      backgroundColor: window.theme.app.bg,
     } as CSSStyleDeclaration);
 
     this.addEventListener("new-editor-requested", this.onNewEditorRequested);
@@ -59,10 +64,12 @@ class EditorView extends HTMLElement {
       "close-editor-requested",
       this.onCloseEditorRequested as EventListener
     );
+    this.addEventListener("show-tab-context-menu", this.onShowTabContextMenu as EventListener);
+    this.addEventListener("rename-editor-requested", this.onRenameEditorRequested as EventListener);
   }
 
   openEditor() {
-    const editor = new Editor(this._theme);
+    const editor = new Editor();
     this._editors.push(editor);
   }
 
@@ -76,7 +83,7 @@ class EditorView extends HTMLElement {
       alignItems: "center",
       padding: "0.5em",
       width: "100%",
-      backgroundColor: this._theme.menuBar.bg,
+      backgroundColor: window.theme.menuBar.bg,
     } as CSSStyleDeclaration);
 
     const sideBarIcon = new Icon(buildFileExplorerIconSVG(), "30px", true);
@@ -90,8 +97,7 @@ class EditorView extends HTMLElement {
           this._sideBar.show();
           this._sideBarVisible = true;
         }
-      },
-      this._theme.menuBar
+      }
     );
     menuBar.appendChild(toggleSideBarOption);
 
@@ -100,8 +106,7 @@ class EditorView extends HTMLElement {
       newEditorIcon,
       () => {
         this.newEditor();
-      },
-      this._theme.menuBar
+      }
     );
     menuBar.appendChild(newEditorOption);
 
@@ -110,8 +115,7 @@ class EditorView extends HTMLElement {
       settingsIcon,
       () => {
         console.log("settings");
-      },
-      this._theme.menuBar
+      }
     );
     settingsOption.style.marginLeft = "auto";
     menuBar.appendChild(settingsOption);
@@ -135,7 +139,7 @@ class EditorView extends HTMLElement {
   }
 
   private newEditor() {
-    const editor = new Editor(this._theme);
+    const editor = new Editor();
     editor.style.gridColumn = "2";
     editor.appendLine("");
 
@@ -149,13 +153,28 @@ class EditorView extends HTMLElement {
     this._editors.splice(this._currentIndex, 0, editor);
     this._contentWrapper.appendChild(editor);
     editor.show();
-    const tab = new Tab("New Editor", this._theme.sideBar);
+    const editorName = this.generateEditorName();
+    this._editorNames.add(editorName);
+    const tab = new Tab(editorName);
     tab.highlight();
     this._sideBar.addTabAtIndex(tab, this._currentIndex);
     if (this._editors.length > 1) {
       this._sideBar.show();
       this._sideBarVisible = true;
     }
+  }
+
+  private generateEditorName() {
+    let i = this._editors.length || 1;
+    let editorName: string | null = null;
+    while (!editorName) {
+      const candidate = `Editor-${i}`;
+      if (!this._editorNames.has(candidate)) {
+        editorName = candidate;
+      }
+      i++;
+    }
+    return editorName;
   }
 
   private showEditorAtIndex(index: number) {
@@ -172,15 +191,31 @@ class EditorView extends HTMLElement {
   private closeEditorAtIndex(index: number) {
     const editor = this._editors.splice(index, 1)[0];
     editor.hide();
+    const editorName = this._sideBar.getTabNameAtIndex(index);
+    this._editorNames.delete(editorName);
     this._sideBar.removeTabAtIndex(index);
     editor.remove();
-    if (this._currentIndex > this._editors.length - 1) {
+    if (this._currentIndex > 0 || this._editors.length === 0) {
       this._currentIndex--;
     }
     if (this._currentIndex >= 0) {
       this.showEditorAtIndex(this._currentIndex);
     } else {
       this._splashScreen.show();
+    }
+  }
+
+  private destroyContextMenu() {
+    if (this._contextMenu) {
+      this._contextMenu.destroy();
+      this._contextMenu = null;
+    }
+  }
+
+  private destroyModal() {
+    if (this._modal) {
+      this._modal.destroy();
+      this._modal = null;
     }
   }
 
@@ -198,6 +233,59 @@ class EditorView extends HTMLElement {
   private onCloseEditorRequested(event: CustomEvent) {
     const { index } = event.detail;
     this.closeEditorAtIndex(index);
+  }
+
+  private onShowTabContextMenu(event: CustomEvent) {
+    const { pageX, pageY, index, oldName } = event.detail;
+    this.destroyContextMenu();
+    const menu = new ContextMenu();
+    menu.addOption("Rename", () => {
+      const customEvent = new CustomEvent("rename-editor-requested", {
+        bubbles: true,
+        detail: {
+          index,
+          oldName
+        }
+      });
+      this.dispatchEvent(customEvent);
+    });
+    this.appendChild(menu);
+    this._contextMenu = menu;
+    this._contextMenu.show(pageX, pageY);
+  }
+
+  private onRenameEditorRequested(event: CustomEvent) {
+    const { index, oldName } = event.detail;
+    this.destroyModal();
+    const modal = new Modal("Enter a new name for the editor:");
+    const onInput = (event: InputEvent) => {
+      const input = event.target as HTMLInputElement;
+      const value = input.value;
+      if (value.length === 0) {
+        modal.lock();
+        return;
+      }
+      if (this._editorNames.has(value)) {
+        modal.lock();
+        return;        
+      }
+      modal.unlock();
+    };
+    modal.addInput(onInput as EventListener, oldName);
+    modal.addAction("Cancel", () => {
+      this.destroyModal();
+    });
+    modal.addAction("Confirm", () => {
+      if (modal.valid) {
+        const newName = modal.inputValue;
+        this._editorNames.delete(oldName);
+        this._editorNames.add(newName);
+        this._sideBar.setTabNameAtIndex(index, newName);
+        this.destroyModal();
+      }
+    });
+    this._modal = modal;
+    this.appendChild(modal);
   }
 }
 

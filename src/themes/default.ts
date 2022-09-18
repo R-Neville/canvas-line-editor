@@ -31,7 +31,24 @@ const defaultTheme = {
   lineElement: {
     fg: "#E5E8E8",
     highlightBg: "#273746",
-  }
+  },
+  contextMenu: {
+    bg: "#E5E7E9",
+    highlightBg: "#FFF",
+    fg: "#000",
+  },
+  modal: {
+    bg: "#E5E8E8",
+    fg: "#212F3D",
+  },
+  error: {
+    bg: "#F5B7B1",
+    fg: "#C0392B",
+  },
+  success: {
+    bg: "#ABEBC6",
+    fg: "#145A32",
+  },
 } as Theme;
 
 export default defaultTheme;

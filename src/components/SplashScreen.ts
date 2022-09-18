@@ -1,14 +1,10 @@
 import { applyStyles } from "../helpers";
-import ComponentTheme from "../themes/ComponentTheme";
 import universalStyles from "../universalStyles";
 
 class SplashScreen extends HTMLElement {
-  private _theme: ComponentTheme;
 
-  constructor(theme: ComponentTheme) {
+  constructor() {
     super();
-
-    this._theme = theme;
 
     const welcome = document.createElement("h1");
     welcome.textContent = "Watch this space!";
@@ -45,7 +41,7 @@ class SplashScreen extends HTMLElement {
     applyStyles(welcome, {
       ...universalStyles,
       textAlign: "center",
-      color: this._theme.fg,
+      color: window.theme.splashScreen.fg,
     } as CSSStyleDeclaration);
 
     [p1, p2, pn].forEach(p => {
@@ -55,7 +51,7 @@ class SplashScreen extends HTMLElement {
         maxWidth: "500px",
         fontSize: "1em",
         textAlign: "center",
-        color: this._theme.fg,
+        color: window.theme.splashScreen.fg,
       } as CSSStyleDeclaration);
     });
 
@@ -63,9 +59,9 @@ class SplashScreen extends HTMLElement {
       padding: "0.5em 1em",
       border: "none",
       borderRadius: "3px",
-      backgroundColor: this._theme.fg,
+      backgroundColor: window.theme.splashScreen.fg,
       fontSize: "1em",
-      color: this._theme.bg,
+      color: window.theme.splashScreen.bg,
       cursor: "pointer",
     } as CSSStyleDeclaration);
 

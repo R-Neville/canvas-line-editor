@@ -5,14 +5,12 @@ import Icon from "./Icon";
 
 class MenuOption extends HTMLElement {
   private _icon: Icon;
-  private _theme: ComponentTheme;
 
-  constructor(icon: Icon, onClick: EventListener, theme: ComponentTheme) {
+  constructor(icon: Icon, onClick: EventListener) {
     super();
 
-    this._theme = theme;
     this._icon = icon;
-    this._icon.setColor(this._theme.fg);
+    this._icon.setColor(window.theme.menuBar.fg);
     this.appendChild(this._icon);
 
     applyStyles(this, {
@@ -32,7 +30,7 @@ class MenuOption extends HTMLElement {
   }
 
   private onMouseEnter() {
-    this.style.backgroundColor = this._theme.highlightBg;
+    this.style.backgroundColor = window.theme.menuBar.highlightBg;
   }
 
   private onMouseLeave() {

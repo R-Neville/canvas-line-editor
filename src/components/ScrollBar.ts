@@ -1,11 +1,9 @@
 import { applyStyles } from "../helpers";
-import ComponentTheme from "../themes/ComponentTheme";
 import universalStyles from "../universalStyles";
 
 const MIN_THUMB_SIZE = 40;
 
 class ScrollBar extends HTMLElement {
-  private _theme: ComponentTheme;
   private _mountEl: HTMLElement;
   private _scrollEl: HTMLElement;
   private _horizontal: boolean;
@@ -20,13 +18,11 @@ class ScrollBar extends HTMLElement {
     scrollEl: HTMLElement,
     horizontal: boolean,
     size: number,
-    theme: ComponentTheme
   ) {
     super();
 
     this._thumbSize = 0;
     this._actualThumbSize = 0;
-    this._theme = theme;
     this._mountEl = mountEl;
     this._scrollEl = scrollEl;
     this._horizontal = horizontal;
@@ -56,7 +52,7 @@ class ScrollBar extends HTMLElement {
       position: "absolute",
       borderRadius: "5px",
       cursor: "grab",
-      backgroundColor: this._theme.bg,
+      backgroundColor: window.theme.scrollBar.bg,
     } as CSSStyleDeclaration);
 
     if (this._horizontal) {
@@ -95,10 +91,6 @@ class ScrollBar extends HTMLElement {
 
   connectedCallback() {
     this.updateThumb();
-  }
-
-  updateTheme(newTheme: ComponentTheme) {
-    this._theme = newTheme;
   }
 
   updateThumb() {

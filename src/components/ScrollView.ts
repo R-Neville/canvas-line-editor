@@ -1,17 +1,13 @@
 import { applyStyles } from "../helpers";
-import Theme from "../themes/Theme";
 import universalStyles from "../universalStyles";
 import ScrollBar from "./ScrollBar";
 
 class ScrollView extends HTMLElement {
-  private _theme: Theme;
   private _verticalScrollBar: ScrollBar | null;
   private _horizontalScrollBar: ScrollBar | null;
 
-  constructor(theme: Theme) {
+  constructor() {
     super();
-
-    this._theme = theme;
 
     this._verticalScrollBar = null;
     this._horizontalScrollBar = null;
@@ -28,17 +24,12 @@ class ScrollView extends HTMLElement {
     } as CSSStyleDeclaration);
   }
 
-  updateTheme(newTheme: Theme) {
-    this._theme = newTheme;
-  }
-
   addHorizontalScrollBar(scrollEl: HTMLElement, height: number) {
     this._horizontalScrollBar = new ScrollBar(
       this,
       scrollEl,
       true,
-      height,
-      this._theme.scrollBar
+      height
     );
     applyStyles(this._horizontalScrollBar, {
       gridRow: "2",
@@ -52,8 +43,7 @@ class ScrollView extends HTMLElement {
       this,
       scrollEl,
       false,
-      width,
-      this._theme.scrollBar
+      width
     );
     applyStyles(this._verticalScrollBar, {
       gridRow: "1",

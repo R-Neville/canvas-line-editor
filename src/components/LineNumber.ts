@@ -1,18 +1,13 @@
 import { applyStyles } from "../helpers";
-import ComponentTheme from "../themes/ComponentTheme";
 import universalStyles from "../universalStyles";
 
 class LineNumber extends HTMLElement {
   private _highlighted: boolean;
-  private _theme: ComponentTheme;
 
-  constructor(num: number, theme: ComponentTheme) {
+  constructor(num: number) {
     super();
 
-    this._theme = theme;
-
     this._highlighted = false;
-
     this.textContent = num.toString();
 
     applyStyles(this, {
@@ -28,12 +23,8 @@ class LineNumber extends HTMLElement {
       backgroundColor: "inherit",
       fontSize: "14px",
       lineHeight: "18px",
-      color: this._theme.fg,
+      color: window.theme.lineNumber.fg,
     } as CSSStyleDeclaration);
-  }
-
-  updateTheme(newTheme: ComponentTheme) {
-    this._theme = newTheme;
   }
 
   highlighted() {
@@ -42,12 +33,12 @@ class LineNumber extends HTMLElement {
 
   highlight() {
     this._highlighted = true;
-    this.style.color = this._theme.highlightFg;
+    this.style.color = window.theme.lineNumber.highlightFg;
   }
 
   unHighlight() {
     this._highlighted = false;
-    this.style.color = this._theme.fg;
+    this.style.color = window.theme.lineNumber.fg;
   }
 }
 

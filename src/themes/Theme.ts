@@ -11,4 +11,8 @@ export default interface Theme {
   lineNumber: ComponentTheme;
   textArea: ComponentTheme;
   lineElement: ComponentTheme;
+  contextMenu: ComponentTheme;
+  modal: ComponentTheme;
+  error: ComponentTheme;
+  success: ComponentTheme;
 }

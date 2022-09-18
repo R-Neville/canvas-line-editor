@@ -14,5 +14,11 @@ applyStyles(document.body, {
   userSelect: "none",
 } as CSSStyleDeclaration);
 
-const app = new App(themes.defaultTheme);
+document.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+});
+
+window.theme = themes.defaultTheme;
+
+const app = new App();
 document.body.appendChild(app);

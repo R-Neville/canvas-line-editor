@@ -1,16 +1,13 @@
 import { applyStyles } from "../helpers";
-import Theme from "../themes/Theme";
 import universalStyles from "../universalStyles";
 import LineNumber from "./LineNumber";
 
 class Margin extends HTMLElement {
-  private _theme: Theme;
   private _lineNumbers: LineNumber[];
 
-  constructor(theme: Theme) {
+  constructor() {
     super();
 
-    this._theme = theme;
     this._lineNumbers = [];
 
     applyStyles(this, {
@@ -21,13 +18,6 @@ class Margin extends HTMLElement {
       backgroundColor: "inherit",
       userSelect: "none",
     } as CSSStyleDeclaration);
-  }
-
-  updateTheme(newTheme: Theme) {
-    this._theme = newTheme;
-    this._lineNumbers.forEach((ln) => {
-      ln.updateTheme(this._theme.lineNumber);
-    });
   }
 
   appendLines(lineCount: number) {
@@ -77,7 +67,7 @@ class Margin extends HTMLElement {
   }
 
   private buildLineNumber(num: number) {
-    const lineNumber = new LineNumber(num, this._theme.lineNumber);
+    const lineNumber = new LineNumber(num);
     return lineNumber;
   }
 }

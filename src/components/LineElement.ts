@@ -1,22 +1,19 @@
 import { applyStyles } from "../helpers";
-import ComponentTheme from "../themes/ComponentTheme";
 import TextArea from "./TextArea";
 
 class LineElement extends HTMLCanvasElement {
-  private _theme: ComponentTheme;
   private _text: string;
   private _caretPos: number;
   private _textArea: TextArea;
   private _focused: boolean;
   private _selection: Function | null;
 
-  constructor(parent: TextArea, text: string, theme: ComponentTheme) {
+  constructor(parent: TextArea, text: string) {
     super();
 
     this._textArea = parent;
     this._text = text;
     this._caretPos = 0;
-    this._theme = theme;
     this.height = 20;
     this.tabIndex = 0;
     this._focused = false;
@@ -63,13 +60,6 @@ class LineElement extends HTMLCanvasElement {
 
   get text() {
     return this._text;
-  }
-
-  updateTheme(theme: ComponentTheme) {
-    this._theme = theme;
-    applyStyles(this, {
-      color: this._theme.fg,
-    } as CSSStyleDeclaration);
   }
 
   focusAt(index: number) {
@@ -129,7 +119,7 @@ class LineElement extends HTMLCanvasElement {
     this.drawText();
     const context = this.getContext("2d");
     if (context) {
-      context.fillStyle = this._theme.fg + "55";
+      context.fillStyle = window.theme.lineElement.fg + "55";
       if (this._text.length > 0) {
         context.fillRect(
           2 + start * this.charWidth(),
@@ -172,7 +162,7 @@ class LineElement extends HTMLCanvasElement {
     if (context) {
       context.textBaseline = "middle";
       context.font = `normal ${this.fontSize()}px monospace`;
-      context.fillStyle = this._theme.fg;
+      context.fillStyle = window.theme.lineElement.fg;
       context.fillText(this._text, 2, this.height / 2 + 1);
     }
   }
@@ -192,7 +182,7 @@ class LineElement extends HTMLCanvasElement {
       context.moveTo(x, 0);
       context.lineTo(x, this.height);
       context.lineWidth = 2;
-      context.strokeStyle = this._theme.fg;
+      context.strokeStyle = window.theme.lineElement.fg;
       context.stroke();
     }
   }
@@ -210,7 +200,7 @@ class LineElement extends HTMLCanvasElement {
   private onFocus() {
     this._focused = true;
     applyStyles(this, {
-      backgroundColor: this._theme.highlightBg,
+      backgroundColor: window.theme.lineElement.highlightBg,
     } as CSSStyleDeclaration);
   }
 

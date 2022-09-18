@@ -3,24 +3,20 @@ import ScrollView from "./ScrollView";
 import Margin from "./Margin";
 import TextArea from "./TextArea";
 import universalStyles from "../universalStyles";
-import Theme from "../themes/Theme";
 
 class Editor extends HTMLElement {
-  private _theme: Theme;
   private _scrollView: ScrollView;
   private _contentWrapper: HTMLDivElement;
   private _margin: Margin;
   private _textArea: TextArea;
 
-  constructor(theme: Theme) {
+  constructor() {
     super();
 
-    this._theme = theme;
-
-    this._scrollView = new ScrollView(this._theme);
+    this._scrollView = new ScrollView();
     this._contentWrapper = document.createElement("div");
-    this._margin = new Margin(this._theme);
-    this._textArea = new TextArea(this._theme);
+    this._margin = new Margin();
+    this._textArea = new TextArea();
 
     this._scrollView.addVerticalScrollBar(this._contentWrapper, 15);
     this._scrollView.addHorizontalScrollBar(this._textArea, 15);
@@ -40,7 +36,7 @@ class Editor extends HTMLElement {
       padding: "5px",
       width: "100%",
       maxHeight: "100%",
-      backgroundColor: this._theme.editor.bg,
+      backgroundColor: window.theme.editor.bg,
     } as CSSStyleDeclaration);
 
     applyStyles(this._contentWrapper, {
@@ -75,12 +71,6 @@ class Editor extends HTMLElement {
   hide() {
     this.style.display = "none";
     this._textArea.current = false;
-  }
-
-  updateTheme(newTheme: Theme) {
-    this._theme = newTheme;
-    this._margin.updateTheme(this._theme);
-    this._textArea.updateTheme(this._theme);
   }
 
   appendLine(line: string) {
