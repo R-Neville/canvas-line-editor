@@ -73,6 +73,7 @@ class EditorView extends HTMLElement {
       this.onRenameEditorRequested as EventListener
     );
     this.addEventListener("tab-moved", this.onTabMoved as EventListener);
+    document.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
   }
 
   openEditor() {
@@ -295,6 +296,16 @@ class EditorView extends HTMLElement {
     this._currentIndex = newIndex;
     this._editors[this._currentIndex].show();
     this._sideBar.highlightTabAtIndex(this._currentIndex);
+  }
+
+  private onKeyDown(event: KeyboardEvent) {
+    if (event.ctrlKey && event.code === "Space") {
+      if (this._currentIndex < this._editors.length - 1) {
+        this.showEditorAtIndex(this._currentIndex + 1);
+      } else {
+        this.showEditorAtIndex(0);
+      }
+    }
   }
 }
 
