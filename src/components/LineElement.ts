@@ -425,7 +425,7 @@ class LineElement extends HTMLCanvasElement {
     const caretPos = this.getCaretPos();
     const textBeforeCaret = this._text.slice(0, caretPos);
     const textAfterCaret = this._text.slice(caretPos);
-    const tab = " ".repeat(4);
+    const tab = " ".repeat(window.configManager.tabSize);
     const insertSpacesNum = textBeforeCaret.length % tab.length;
     if (textAfterCaret.length === 0) {
       this.setCaretPos(caretPos + tab.length);
