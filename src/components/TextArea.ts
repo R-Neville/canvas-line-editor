@@ -93,6 +93,10 @@ class TextArea extends HTMLElement {
     this._current = newValue;
   }
 
+  get tab() {
+    return " ".repeat(window.configManager.tabSize);
+  }
+
   refresh() {
     this._lineElements.forEach((lineElement) => {
       lineElement.height = window.configManager.lineHeight;
@@ -198,11 +202,11 @@ class TextArea extends HTMLElement {
     this.dispatchEvent(customEvent);
   }
 
-  private dispatchLineCountChanged() {
+  private dispatchLineCountChanged(delta?: number) {
     const customEvent = new CustomEvent("line-count-changed", {
       bubbles: true,
       detail: {
-        delta:
+        delta: delta ||
           this._lineManager.currentLineCount - this._lineManager.oldLineCount,
       },
     });
@@ -266,16 +270,24 @@ class TextArea extends HTMLElement {
   private onNewLineRequested(event: CustomEvent) {
     event.stopPropagation();
     this.clearSelection();
-    const { textBeforeCaret, textAfterCaret } = event.detail;
+    const { textBeforeCaret, textAfterCaret, pair } = event.detail;
     const { line: lineIndex } = this._lineManager.caret;
     const newLineIndex = lineIndex + 1;
     let indentation = this.getIndentation(textBeforeCaret);
-    const newColIndex = indentation.length;
-    this.addLine(indentation + textAfterCaret, newLineIndex);
-    this.setCaret(newLineIndex, newColIndex);
-    this._lineElements[newLineIndex].focusAt(newColIndex);
-    this.dispatchLineCountChanged();
-    this.dispatchContentChanged(newLineIndex, false);
+    if (pair && window.configManager.autoIndent) {
+      this.addLine(indentation + this.tab, newLineIndex);
+      const newColIndex = (indentation + this.tab).length;
+      this.setCaret(newLineIndex, newColIndex);
+      this.addLine(indentation + textAfterCaret, newLineIndex + 1);
+      this._lineElements[newLineIndex].focusAt(newColIndex);
+      this.dispatchLineCountChanged(2);
+    } else {
+      this.addLine(indentation + textAfterCaret, newLineIndex);
+      const newColIndex = indentation.length;
+      this.setCaret(newLineIndex, newColIndex);
+      this._lineElements[newLineIndex].focusAt(newColIndex);
+      this.dispatchLineCountChanged(1);
+    }
     this.dispatchSelectionChanged();
   }
 
@@ -559,9 +571,11 @@ class TextArea extends HTMLElement {
   // Helper methods:
 
   private getIndentation(textBeforeCaret: string) {
-    const matches = textBeforeCaret.match(/^\s+/);
-    if (matches) {
-      return matches[0];
+    if (window.configManager.autoIndent) {
+      const matches = textBeforeCaret.match(/^\s+/);
+      if (matches) {
+        return matches[0];
+      }
     }
     return "";
   }

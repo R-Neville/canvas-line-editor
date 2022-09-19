@@ -1,6 +1,39 @@
 import { applyStyles } from "../helpers";
 import TextArea from "./TextArea";
 
+interface PairingChar {
+  open: string;
+  close: string;
+}
+
+const PAIRING_CHARS = [
+  { open: "(", close: ")" },
+  { open: "{", close: "}" },
+  { open: "[", close: "]" },
+  { open: "'", close: "'" },
+  { open: '"', close: '"' },
+  { open: "`", close: "`" },
+] as PairingChar[];
+
+function getPairFromOpen(char: string) {
+  const found = PAIRING_CHARS.filter((pair) => {
+    return pair.open === char;
+  });
+  if (found.length > 0) {
+    return found[0];
+  }
+  return null;
+}
+
+function isPair(char1: string, char2: string) {
+  for (let pair of PAIRING_CHARS) {
+    if (char1 === pair.open && char2 === pair.close) {
+      return true;
+    }
+  }
+  return false;
+}
+
 class LineElement extends HTMLCanvasElement {
   private _text: string;
   private _caretPos: number;
@@ -348,11 +381,16 @@ class LineElement extends HTMLCanvasElement {
     const textBeforeCaret = this._text.slice(0, caretPos);
     const textAfterCaret = this._text.slice(caretPos);
     this._text = textBeforeCaret;
+    let pair = false;
+    if (isPair(textBeforeCaret.slice(-1), textAfterCaret[0])) {
+      pair = true;
+    }
     const customEvent = new CustomEvent("new-line-requested", {
       bubbles: true,
       detail: {
         textBeforeCaret,
         textAfterCaret,
+        pair,
       },
     });
     this.dispatchEvent(customEvent);
@@ -443,7 +481,13 @@ class LineElement extends HTMLCanvasElement {
     const caretPos = this.getCaretPos();
     const textBeforeCaret = this._text.slice(0, caretPos);
     const textAfterCaret = this._text.slice(caretPos);
-    const newText = `${textBeforeCaret}${char}${textAfterCaret}`;
+    const pair = getPairFromOpen(char);
+    let newText: string;
+    if (window.configManager.pairing && pair) {
+      newText = `${textBeforeCaret}${pair.open}${pair.close}${textAfterCaret}`;
+    } else {
+      newText = `${textBeforeCaret}${char}${textAfterCaret}`;
+    }
     this.setCaretPos(caretPos + 1);
     this.update(newText);
     this.dispatchLineChanged();
