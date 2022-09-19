@@ -73,6 +73,11 @@ class Editor extends HTMLElement {
     this._textArea.current = false;
   }
 
+  refresh() {
+    this._margin.refresh();
+    this._textArea.refresh();
+  }
+
   appendLine(line: string) {
     this._margin.appendLines(1);
     this._textArea.appendLine(line);

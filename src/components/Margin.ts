@@ -66,6 +66,16 @@ class Margin extends HTMLElement {
     });
   }
 
+  refresh() {
+    this._lineNumbers.forEach((lineNumber) => {
+      applyStyles(lineNumber, {
+        height: window.configManager.lineHeight + "px",
+        lineHeight: window.configManager.lineHeight + "px",
+        fontSize: window.configManager.fontSize + "px",
+      } as CSSStyleDeclaration);
+    });
+  }
+
   private buildLineNumber(num: number) {
     const lineNumber = new LineNumber(num);
     return lineNumber;

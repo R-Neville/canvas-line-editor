@@ -15,4 +15,5 @@ export default interface Theme {
   modal: ComponentTheme;
   error: ComponentTheme;
   success: ComponentTheme;
+  settingsView: ComponentTheme;
 }

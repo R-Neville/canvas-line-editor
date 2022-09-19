@@ -13,6 +13,7 @@ import Tab from "./components/Tab";
 import SplashScreen from "./components/SplashScreen";
 import ContextMenu from "./components/ContextMenu";
 import Modal from "./components/Modal";
+import SettingsView from "./components/SettingsView";
 
 class EditorView extends HTMLElement {
   private _editors: Editor[];
@@ -25,6 +26,7 @@ class EditorView extends HTMLElement {
   private _editorNames: Set<string>;
   private _contextMenu: ContextMenu | null;
   private _modal: Modal | null;
+  private _settingsView: SettingsView|null;
 
   constructor() {
     super();
@@ -40,6 +42,7 @@ class EditorView extends HTMLElement {
     this._editorNames = new Set();
     this._contextMenu = null;
     this._modal = null;
+    this._settingsView = null;
 
     this.appendChild(this._menuBar);
     this.appendChild(this._contentWrapper);
@@ -73,6 +76,7 @@ class EditorView extends HTMLElement {
       this.onRenameEditorRequested as EventListener
     );
     this.addEventListener("tab-moved", this.onTabMoved as EventListener);
+    this.addEventListener("font-size-changed", this.onFontSizeChanged as EventListener);
     document.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
   }
 
@@ -114,7 +118,15 @@ class EditorView extends HTMLElement {
 
     const settingsIcon = new Icon(buildSettingsIconSVG(), "30px", true);
     const settingsOption = new MenuOption(settingsIcon, () => {
-      console.log("settings");
+      if (!this._settingsView) {
+        this._settingsView = new SettingsView(((event: Event) => {
+          if (event.target === this._settingsView) {
+            this._settingsView?.remove();
+            this._settingsView = null;
+          }
+        }).bind(this));
+        this.appendChild(this._settingsView);
+      }
     });
     settingsOption.style.marginLeft = "auto";
     menuBar.appendChild(settingsOption);
@@ -296,6 +308,14 @@ class EditorView extends HTMLElement {
     this._currentIndex = newIndex;
     this._editors[this._currentIndex].show();
     this._sideBar.highlightTabAtIndex(this._currentIndex);
+  }
+
+  private onFontSizeChanged(event: CustomEvent) {
+    event.stopPropagation();
+
+    this._editors.forEach((editor) => {
+      editor.refresh();
+    });
   }
 
   private onKeyDown(event: KeyboardEvent) {

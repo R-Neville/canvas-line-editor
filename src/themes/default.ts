@@ -49,6 +49,11 @@ const defaultTheme = {
     bg: "#ABEBC6",
     fg: "#145A32",
   },
+  settingsView: {
+    bg: "#E5E8E8",
+    fg: "#212F3D",
+    highlightFg: "#34495E",
+  }
 } as Theme;
 
 export default defaultTheme;

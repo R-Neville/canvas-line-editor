@@ -1,4 +1,5 @@
 import { applyStyles } from "./helpers";
+import configManager from "./config";
 import themes from "./themes";
 import universalStyles from "./universalStyles";
 import App from "./App";
@@ -17,6 +18,8 @@ applyStyles(document.body, {
 document.addEventListener("contextmenu", (event) => {
   event.preventDefault();
 });
+
+window.configManager = configManager;
 
 window.theme = themes.defaultTheme;
 
