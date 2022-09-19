@@ -10,7 +10,8 @@ class SettingCheckbox extends HTMLElement {
 
   constructor(value: boolean, action: Function, states: [string, string]) {
     super();
-
+    
+    this._value = value;
     this._checkbox = this.buildCheckBox();
     this._states = states;
     this._stateDiv = this.buildStateDiv();
@@ -18,7 +19,6 @@ class SettingCheckbox extends HTMLElement {
 
     this.append(this._checkbox);
 
-    this._value = value;
     this._action = action;
 
     applyStyles(this, {

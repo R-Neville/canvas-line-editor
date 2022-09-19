@@ -93,6 +93,13 @@ class TextArea extends HTMLElement {
     this._current = newValue;
   }
 
+  refresh() {
+    this._lineElements.forEach((lineElement) => {
+      lineElement.height = window.configManager.lineHeight;
+      lineElement.refresh();
+    });
+  }
+
   appendLine(line: string) {
     const newLineElement = this.buildLine(line);
     this._lines.push(line);

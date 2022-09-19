@@ -14,7 +14,7 @@ class LineElement extends HTMLCanvasElement {
     this._textArea = parent;
     this._text = text;
     this._caretPos = 0;
-    this.height = 20;
+    this.height = window.configManager.lineHeight;
     this.tabIndex = 0;
     this._focused = false;
     this._selection = null;
@@ -163,7 +163,7 @@ class LineElement extends HTMLCanvasElement {
       context.textBaseline = "middle";
       context.font = `normal ${this.fontSize()}px monospace`;
       context.fillStyle = window.theme.lineElement.fg;
-      context.fillText(this._text, 2, this.height / 2 + 1);
+      context.fillText(this._text, 2, this.height / 2 + 0.1 * this.height);
     }
   }
 

@@ -76,6 +76,7 @@ class EditorView extends HTMLElement {
       this.onRenameEditorRequested as EventListener
     );
     this.addEventListener("tab-moved", this.onTabMoved as EventListener);
+    this.addEventListener("font-size-changed", this.onFontSizeChanged as EventListener);
     document.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
   }
 
@@ -307,6 +308,14 @@ class EditorView extends HTMLElement {
     this._currentIndex = newIndex;
     this._editors[this._currentIndex].show();
     this._sideBar.highlightTabAtIndex(this._currentIndex);
+  }
+
+  private onFontSizeChanged(event: CustomEvent) {
+    event.stopPropagation();
+
+    this._editors.forEach((editor) => {
+      editor.refresh();
+    });
   }
 
   private onKeyDown(event: KeyboardEvent) {

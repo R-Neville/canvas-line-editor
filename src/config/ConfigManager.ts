@@ -32,10 +32,20 @@ class ConfigManager {
 
   set tabSize(value: number) {
     this._current.tabSize = value;
+    this.save();
+  }
+
+  get lineHeight() {
+    return this._current.lineHeight;
   }
 
   get fontSize() {
-    return Math.floor(this._current.lineHeight * 0.7);
+    return Math.round(this._current.lineHeight * 0.7);
+  }
+
+  set fontSize(value: number) {
+    this._current.lineHeight = Math.round(value * 1.3);
+    this.save();
   }
 
   toggleAutoIndent() {

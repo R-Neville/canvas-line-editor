@@ -78,7 +78,7 @@ class SettingsView extends HTMLElement {
     const autoIndexSection = new SettingsPageSection("Auto Indent");
     const autoIndentCheckbox = new SettingCheckbox(
       window.configManager.autoIndent,
-      window.configManager.toggleAutoIndent,
+      () => window.configManager.toggleAutoIndent(),
       ["Off", "On"]
     );
     autoIndexSection.setCheckbox(autoIndentCheckbox);
@@ -87,7 +87,7 @@ class SettingsView extends HTMLElement {
     const pairingSection = new SettingsPageSection("Pairing");
     const pairingCheckbox = new SettingCheckbox(
       window.configManager.pairing,
-      window.configManager.togglePairing,
+      () => window.configManager.togglePairing(),
       ["Off", "On"]
     );
     pairingSection.setCheckbox(pairingCheckbox);
@@ -118,6 +118,11 @@ class SettingsView extends HTMLElement {
     }
 
     input.removeErrorStyles();
+
+    window.configManager.fontSize = valueInt;
+
+    const customEvent = new CustomEvent("font-size-changed", { bubbles: true });
+    this.dispatchEvent(customEvent);
   }
 
   private onEditorTabSizeInputBlur(event: Event) {

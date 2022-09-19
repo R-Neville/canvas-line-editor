@@ -14,15 +14,14 @@ class LineNumber extends HTMLElement {
       ...universalStyles,
       display: "flex",
       justifyContent: "flex-end",
+      alignItems: "center",
       paddingLeft: "20px",
       paddingRight: "5px",
       minWidth: "70px",
+      height: window.configManager.lineHeight + "px",
       border: "none",
-      borderTop: "1px solid transparent",
-      borderBottom: "1px solid transparent",
       backgroundColor: "inherit",
-      fontSize: "14px",
-      lineHeight: "18px",
+      fontSize: window.configManager.fontSize + "px",
       color: window.theme.lineNumber.fg,
     } as CSSStyleDeclaration);
   }
