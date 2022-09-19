@@ -59,13 +59,13 @@ class SettingsView extends HTMLElement {
   private buildGeneralSettingsPage() {
     const page = new SettingsPage();
 
-    const editorFontSizeSection = new SettingsPageSection("Editor Font Size");
-    const editorFontSizeInput = new SettingInput(
-      window.configManager.fontSize.toString(),
-      this.onEditorFontSizeInputBlur.bind(this)
+    const editorLineHeightSection = new SettingsPageSection("Editor Line Height");
+    const editorLineHeightInput = new SettingInput(
+      window.configManager.lineHeight.toString(),
+      this.onEditorLineHeightInputBlur.bind(this)
     );
-    editorFontSizeSection.setInput(editorFontSizeInput);
-    page.addSection(editorFontSizeSection);
+    editorLineHeightSection.setInput(editorLineHeightInput);
+    page.addSection(editorLineHeightSection);
 
     const tabSizeSection = new SettingsPageSection("Tab Size");
     const tabSizeInput = new SettingInput(
@@ -100,7 +100,7 @@ class SettingsView extends HTMLElement {
     this._generalPage.show();
   }
 
-  private onEditorFontSizeInputBlur(event: Event) {
+  private onEditorLineHeightInputBlur(event: Event) {
     const input = event.target as SettingInput;
     const valueInt = parseInt(input.value);
 
@@ -112,16 +112,16 @@ class SettingsView extends HTMLElement {
       input.showErrorStyles();
       return;
     }
-    if (valueInt > 20) {
+    if (valueInt > 40) {
       input.showErrorStyles();
       return;
     }
 
     input.removeErrorStyles();
 
-    window.configManager.fontSize = valueInt;
+    window.configManager.lineHeight = valueInt;
 
-    const customEvent = new CustomEvent("font-size-changed", { bubbles: true });
+    const customEvent = new CustomEvent("line-height-changed", { bubbles: true });
     this.dispatchEvent(customEvent);
   }
 
@@ -145,6 +145,11 @@ class SettingsView extends HTMLElement {
     input.removeErrorStyles();
 
     window.configManager.tabSize = valueInt;
+
+    const customEvent = new CustomEvent("tab-size-changed", {
+      bubbles: true,
+    });
+    this.dispatchEvent(customEvent);
   }
 }
 

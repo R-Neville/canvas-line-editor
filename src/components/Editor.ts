@@ -3,12 +3,14 @@ import ScrollView from "./ScrollView";
 import Margin from "./Margin";
 import TextArea from "./TextArea";
 import universalStyles from "../universalStyles";
+import StatusBar from "./StatusBar";
 
 class Editor extends HTMLElement {
   private _scrollView: ScrollView;
   private _contentWrapper: HTMLDivElement;
   private _margin: Margin;
   private _textArea: TextArea;
+  private _statusBar: StatusBar;
 
   constructor() {
     super();
@@ -17,6 +19,7 @@ class Editor extends HTMLElement {
     this._contentWrapper = document.createElement("div");
     this._margin = new Margin();
     this._textArea = new TextArea();
+    this._statusBar = new StatusBar();
 
     this._scrollView.addVerticalScrollBar(this._contentWrapper, 15);
     this._scrollView.addHorizontalScrollBar(this._textArea, 15);
@@ -27,13 +30,14 @@ class Editor extends HTMLElement {
     this._scrollView.setContent(this._contentWrapper);
 
     this.appendChild(this._scrollView);
+    this.appendChild(this._statusBar);
 
     applyStyles(this, {
       ...universalStyles,
       display: "none",
       gridTemplateColumns: "1fr",
+      gridTemplateRows: "1fr max-content",
       overflow: "hidden",
-      padding: "5px",
       width: "100%",
       maxHeight: "100%",
       backgroundColor: window.theme.editor.bg,
@@ -61,6 +65,7 @@ class Editor extends HTMLElement {
       "selection-changed",
       this.onSelectionChanged as EventListener
     );
+    this.addEventListener("caps-lock-changed", this.onCapsLockChanged as EventListener);
   }
 
   show() {
@@ -83,6 +88,10 @@ class Editor extends HTMLElement {
     this._textArea.appendLine(line);
   }
 
+  updateStatusBar() {
+    this._statusBar.updateSpaces();
+  }
+
   // Event handlers:
 
   private onNoLineSelected(event: CustomEvent) {
@@ -92,8 +101,9 @@ class Editor extends HTMLElement {
 
   private onSelectionChanged(event: CustomEvent) {
     event.stopPropagation();
-    const { line } = event.detail.caret;
+    const { line, col } = event.detail.caret;
     this._margin.highlightLineNumber(line);
+    this._statusBar.updateCaretPos(line + 1, col + 1);
   }
 
   private onUnhighlightLineNumber(event: CustomEvent) {
@@ -106,6 +116,11 @@ class Editor extends HTMLElement {
     event.stopPropagation();
     const { delta } = event.detail;
     this._margin.updateLineNumbers(delta);
+  }
+
+  private onCapsLockChanged(event: CustomEvent) {
+    const { capsOn } = event.detail;
+    this._statusBar.updateCapsOn(capsOn);
   }
 }
 

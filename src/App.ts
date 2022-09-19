@@ -26,7 +26,7 @@ class EditorView extends HTMLElement {
   private _editorNames: Set<string>;
   private _contextMenu: ContextMenu | null;
   private _modal: Modal | null;
-  private _settingsView: SettingsView|null;
+  private _settingsView: SettingsView | null;
 
   constructor() {
     super();
@@ -76,8 +76,18 @@ class EditorView extends HTMLElement {
       this.onRenameEditorRequested as EventListener
     );
     this.addEventListener("tab-moved", this.onTabMoved as EventListener);
-    this.addEventListener("font-size-changed", this.onFontSizeChanged as EventListener);
-    document.addEventListener("keydown", this.onKeyDown.bind(this) as EventListener);
+    this.addEventListener(
+      "line-height-changed",
+      this.onLineHeightChanged as EventListener
+    );
+    this.addEventListener(
+      "tab-size-changed",
+      this.onTabSizeChanged as EventListener
+    );
+    document.addEventListener(
+      "keydown",
+      this.onKeyDown.bind(this) as EventListener
+    );
   }
 
   openEditor() {
@@ -119,12 +129,14 @@ class EditorView extends HTMLElement {
     const settingsIcon = new Icon(buildSettingsIconSVG(), "30px", true);
     const settingsOption = new MenuOption(settingsIcon, () => {
       if (!this._settingsView) {
-        this._settingsView = new SettingsView(((event: Event) => {
-          if (event.target === this._settingsView) {
-            this._settingsView?.remove();
-            this._settingsView = null;
-          }
-        }).bind(this));
+        this._settingsView = new SettingsView(
+          ((event: Event) => {
+            if (event.target === this._settingsView) {
+              this._settingsView?.remove();
+              this._settingsView = null;
+            }
+          }).bind(this)
+        );
         this.appendChild(this._settingsView);
       }
     });
@@ -169,10 +181,8 @@ class EditorView extends HTMLElement {
     const tab = new Tab(editorName);
     tab.highlight();
     this._sideBar.addTabAtIndex(tab, this._currentIndex);
-    if (this._editors.length > 1) {
-      this._sideBar.show();
-      this._sideBarVisible = true;
-    }
+    this._sideBar.show();
+    this._sideBarVisible = true;
   }
 
   private generateEditorName() {
@@ -310,11 +320,17 @@ class EditorView extends HTMLElement {
     this._sideBar.highlightTabAtIndex(this._currentIndex);
   }
 
-  private onFontSizeChanged(event: CustomEvent) {
+  private onLineHeightChanged(event: CustomEvent) {
     event.stopPropagation();
 
     this._editors.forEach((editor) => {
       editor.refresh();
+    });
+  }
+
+  private onTabSizeChanged(event: CustomEvent) {
+    this._editors.forEach((editor) => {
+      editor.updateStatusBar();
     });
   }
 

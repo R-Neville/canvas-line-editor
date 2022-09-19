@@ -302,20 +302,20 @@ class LineElement extends HTMLCanvasElement {
       case "Control":
         return;
       case "CapsLock":
-        this._textArea.capsOn = !this._textArea.capsOn;
+        const capsOn = !event.getModifierState("CapsLock");
+        const customEvent = new CustomEvent("caps-lock-changed", {
+          bubbles: true,
+          detail: {
+            capsOn,
+          },
+        });
+        this.dispatchEvent(customEvent);
         return;
       default:
         break;
     }
 
-    if (
-      (event.shiftKey && !this._textArea.capsOn) ||
-      (!event.shiftKey && this._textArea.capsOn)
-    ) {
-      this.insertCharAtCaret(event.key.toUpperCase());
-    } else {
-      this.insertCharAtCaret(event.key);
-    }
+    this.insertCharAtCaret(event.key);
   }
 
   private onClick(event: MouseEvent) {
