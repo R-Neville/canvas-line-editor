@@ -20,6 +20,8 @@ const defaultTheme = {
   },
   editor: {
     bg: "#212F3D",
+    highlightBg: "#2C3E50",
+    fg: "#E5E8E8",
   },
   scrollBar: {
     bg: "#B2BABB",

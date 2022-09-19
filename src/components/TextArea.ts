@@ -7,7 +7,6 @@ class TextArea extends HTMLElement {
   private _lineManager: LineManager;
   private _lines: string[];
   private _lineElements: LineElement[];
-  private _capsOn: boolean;
   private _selecting: boolean;
   private _current: boolean;
 
@@ -17,7 +16,6 @@ class TextArea extends HTMLElement {
     this._lineManager = new LineManager();
     this._lines = [];
     this._lineElements = [];
-    this._capsOn = false;
     this._selecting = false;
     this._current = false;
 
@@ -75,14 +73,6 @@ class TextArea extends HTMLElement {
       "keydown",
       this.onKeyDown.bind(this) as EventListener
     );
-  }
-
-  get capsOn() {
-    return this._capsOn;
-  }
-
-  set capsOn(value: boolean) {
-    this._capsOn = value;
   }
 
   get selecting() {

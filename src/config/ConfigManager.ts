@@ -39,13 +39,12 @@ class ConfigManager {
     return this._current.lineHeight;
   }
 
-  get fontSize() {
-    return Math.round(this._current.lineHeight * 0.7);
+  set lineHeight(value: number) {
+    this._current.lineHeight = value;
   }
 
-  set fontSize(value: number) {
-    this._current.lineHeight = Math.round(value * 1.3);
-    this.save();
+  get fontSize() {
+    return Math.round(this._current.lineHeight * 0.7);
   }
 
   toggleAutoIndent() {
