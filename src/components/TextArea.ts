@@ -491,7 +491,12 @@ class TextArea extends HTMLElement {
 
   private async onKeyDown(event: KeyboardEvent) {
     event.preventDefault();
+
+    const selectionStart = this.selectionStart();
+    const selectionEnd = this.selectionEnd();
+
     if (!this._current) return;
+
     switch (event.key) {
       case "Backspace":
         this.deleteSelectedText();
@@ -500,8 +505,6 @@ class TextArea extends HTMLElement {
         this.deleteSelectedText();
         return;
       case "Enter":
-        const selectionStart = this.selectionStart();
-        const selectionEnd = this.selectionEnd();
         if (selectionStart && selectionEnd) {
           this.deleteSelectedText();
           const newIndex = this._lineManager.caret.line + 1;
@@ -509,6 +512,13 @@ class TextArea extends HTMLElement {
           this.setCaret(newIndex, 0);
           this._lineElements[newIndex].focusAt(0);
           this.dispatchContentChanged(newIndex, false);
+        }
+        return;
+      case "Tab":
+        if (event.shiftKey) {
+          this.removeTabFromSelection();
+        } else {
+          this.addTabToSelection();
         }
         return;
       default:
@@ -544,9 +554,6 @@ class TextArea extends HTMLElement {
           console.log(error);
         });
     }
-
-    const selectionStart = this.selectionStart();
-    const selectionEnd = this.selectionEnd();
 
     if (
       !event.ctrlKey &&
@@ -776,6 +783,79 @@ class TextArea extends HTMLElement {
     this._lineElements.forEach((lineElement) => {
       lineElement.drawSelection(0, lineElement.text.length);
     });
+  }
+
+  private addTabToSelection() {
+    const selectionStart = this.selectionStart();
+    const selectionEnd = this.selectionEnd();
+    if (selectionStart && selectionEnd) {
+      let start: number;
+      let end: number;
+      if (selectionStart.line === selectionEnd.line) return;
+      if (selectionStart.line < selectionEnd.line) {
+        start = selectionStart.line;
+        end = selectionEnd.line;
+      } else {
+        start = selectionEnd.line;
+        end = selectionStart.line;
+      }
+      const selectedLines = this._lines.slice(start, end + 1);
+      selectedLines.forEach((line, index) => {
+        const newText = " ".repeat(window.configManager.tabSize) + line;
+        const lineIndex = start + index;
+        this._lines[lineIndex] = newText;
+        this._lineElements[lineIndex].update(newText);
+        this._lineElements[lineIndex].drawSelection(
+          0,
+          this._lineElements[lineIndex].text.length
+        );
+      });
+    }
+  }
+
+  private removeTabFromSelection() {
+    const selectionStart = this.selectionStart();
+    const selectionEnd = this.selectionEnd();
+    if (selectionStart && selectionEnd) {
+      let start: number;
+      let end: number;
+      if (selectionStart.line === selectionEnd.line) return;
+      if (selectionStart.line < selectionEnd.line) {
+        start = selectionStart.line;
+        end = selectionEnd.line;
+      } else {
+        start = selectionEnd.line;
+        end = selectionStart.line;
+      }
+      const selectedLines = this._lines.slice(start, end + 1);
+      selectedLines.forEach((line, index) => {
+        const lineIndex = start + index;
+        const indentation = this.getIndentation(line);
+        const numberOfTabs = Math.floor(
+          indentation.length / window.configManager.tabSize
+        );
+        const numberOfRemainingSpaces =
+          indentation.length % window.configManager.tabSize;
+        let newText: string;
+        if (numberOfTabs === 0) {
+          newText = line.trimStart();
+        } else {
+          const tabs = " ".repeat(
+            (numberOfTabs - 1) * window.configManager.tabSize
+          );
+          const remainingSpace = " ".repeat(
+            numberOfRemainingSpaces * window.configManager.tabSize
+          );
+          newText = tabs + remainingSpace + line.trimStart();
+        }
+        this._lines[lineIndex] = newText;
+        this._lineElements[lineIndex].update(newText);
+        this._lineElements[lineIndex].drawSelection(
+          0,
+          this._lineElements[lineIndex].text.length
+        );
+      });
+    }
   }
 }
 
