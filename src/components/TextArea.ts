@@ -843,9 +843,7 @@ class TextArea extends HTMLElement {
           const tabs = " ".repeat(
             (numberOfTabs - 1) * window.configManager.tabSize
           );
-          const remainingSpace = " ".repeat(
-            numberOfRemainingSpaces * window.configManager.tabSize
-          );
+          const remainingSpace = " ".repeat(numberOfRemainingSpaces);
           newText = tabs + remainingSpace + line.trimStart();
         }
         this._lines[lineIndex] = newText;
