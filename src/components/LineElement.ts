@@ -252,7 +252,6 @@ class LineElement extends HTMLCanvasElement {
 
   private onKeyDown(event: KeyboardEvent) {
     event.preventDefault();
-    event.stopPropagation();
     if (!this._focused) return;
     const caretPos = this.getCaretPos();
     switch (event.key) {
@@ -315,7 +314,9 @@ class LineElement extends HTMLCanvasElement {
         break;
     }
 
-    this.insertCharAtCaret(event.key);
+    if (!event.ctrlKey && !event.altKey) {
+      this.insertCharAtCaret(event.key);
+    }
   }
 
   private onClick(event: MouseEvent) {

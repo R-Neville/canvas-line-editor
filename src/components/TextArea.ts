@@ -69,10 +69,7 @@ class TextArea extends HTMLElement {
       "insert-text-requested",
       this.onInsertTextRequested as EventListener
     );
-    document.addEventListener(
-      "keydown",
-      this.onKeyDown.bind(this) as EventListener
-    );
+    document.addEventListener("keydown", this.onKeyDown.bind(this));
   }
 
   get selecting() {
@@ -196,7 +193,8 @@ class TextArea extends HTMLElement {
     const customEvent = new CustomEvent("line-count-changed", {
       bubbles: true,
       detail: {
-        delta: delta ||
+        delta:
+          delta ||
           this._lineManager.currentLineCount - this._lineManager.oldLineCount,
       },
     });
@@ -276,7 +274,7 @@ class TextArea extends HTMLElement {
       const newColIndex = indentation.length;
       this.setCaret(newLineIndex, newColIndex);
       this._lineElements[newLineIndex].focusAt(newColIndex);
-      this.dispatchLineCountChanged(1);
+      this.dispatchLineCountChanged();
     }
     this.dispatchSelectionChanged();
   }
@@ -499,28 +497,29 @@ class TextArea extends HTMLElement {
 
   private onScrollToLineEnd(event: CustomEvent) {}
 
-  private onKeyDown(event: KeyboardEvent) {
+  private async onKeyDown(event: KeyboardEvent) {
+    event.preventDefault();
     if (!this._current) return;
     switch (event.key) {
       case "Backspace":
         this.deleteSelectedText();
-        this.setSelectionStart();
-        this.setSelectionEnd();
         return;
       case "Delete":
         this.deleteSelectedText();
-        this.setSelectionStart();
-        this.setSelectionEnd();
         return;
       case "Enter":
-        this.deleteSelectedText();
-        const newIndex = this._lineManager.caret.line + 1;
-        this.addLine("", newIndex);
-        this.setCaret(newIndex, 0);
-        this._lineElements[newIndex].focusAt(0);
-        this.dispatchLineCountChanged();
-        this.dispatchContentChanged(newIndex, false);
-        this.dispatchSelectionChanged();
+        const selectionStart = this.selectionStart();
+        const selectionEnd = this.selectionEnd();
+        if (selectionStart && selectionEnd) {
+          this.deleteSelectedText();
+          const newIndex = this._lineManager.caret.line + 1;
+          this.addLine("", newIndex);
+          this.setCaret(newIndex, 0);
+          this._lineElements[newIndex].focusAt(0);
+          this.dispatchLineCountChanged();
+          this.dispatchContentChanged(newIndex, false);
+          this.dispatchSelectionChanged();
+        }
         return;
       default:
         break;
@@ -537,10 +536,31 @@ class TextArea extends HTMLElement {
       return;
     }
 
+    if (event.ctrlKey && event.key === "v") {
+      window.navigator.clipboard
+        .readText()
+        .then((text) => {
+          console.log(text);
+          if (text.length > 0) {
+            this.deleteSelectedText();
+            this.pasteText(text);
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    }
+
     const selectionStart = this.selectionStart();
     const selectionEnd = this.selectionEnd();
 
-    if (selectionStart && selectionEnd && event.key.length === 1) {
+    if (
+      !event.ctrlKey &&
+      !event.altKey &&
+      selectionStart &&
+      selectionEnd &&
+      event.key.length === 1
+    ) {
       this.deleteSelectedText();
       const customEvent = new CustomEvent("insert-text-requested", {
         bubbles: true,
@@ -646,6 +666,8 @@ class TextArea extends HTMLElement {
           this._lineElements[firstLineIndex].text.length
         );
       }
+      this.setSelectionStart();
+      this.setSelectionEnd();
     }
   }
 
@@ -716,6 +738,51 @@ class TextArea extends HTMLElement {
     const newText = oldText.slice(0, colStart) + oldText.slice(colEnd);
     this._lines[lineIndex] = newText;
     this._lineElements[lineIndex].update(newText);
+  }
+
+  private pasteText(text: string) {
+    const lines = text.split("\n");
+    const { line, col } = this._lineManager.caret;
+    if (lines.length === 1) {
+      const textBeforeCaret = this._lines[line].slice(0, col);
+      const textAfterCaret = this._lines[line].slice(col);
+      const newText = textBeforeCaret + text + textAfterCaret;
+      this._lines[line] = newText;
+      this._lineElements[line].update(newText);
+      const newCol = textBeforeCaret.length + text.length;
+      this.setCaret(line, newCol);
+      this._lineElements[line].focusAt(newCol);
+    } else {
+      const firstLineTextBefore = this._lines[line].slice(0, col);
+      const firstLineTextAfter = this._lines[line].slice(col);
+      this._lines[line] = firstLineTextBefore + lines[0];
+      this._lineElements[line].update(firstLineTextBefore + lines[0]);
+      lines.forEach((ln, index) => {
+        if (line + index === line) {
+          return;
+        }
+        if (line + index < line + lines.length - 1) {
+          this.addLine(ln, line + index);
+        } 
+      });
+      
+      const lastLineIndex = line + lines.length - 1;
+      
+      if (this._lines[lastLineIndex]) {
+        const newText = lines.slice(-1) + firstLineTextAfter;
+        this.addLine(newText, lastLineIndex);
+        const newCol = lines.slice(-1).length;
+        this.setCaret(lastLineIndex, newCol);
+        this._lineElements[lastLineIndex].focusAt(newCol);
+      }
+    }
+
+    if (lines.length === 1) {
+      this.dispatchLineCountChanged();
+    } else {
+      this.dispatchLineCountChanged(lines.length - 1);
+    }
+    this.dispatchSelectionChanged();
   }
 
   private copyToClipboard(text: string) {
