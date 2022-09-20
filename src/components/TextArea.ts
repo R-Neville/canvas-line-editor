@@ -490,7 +490,8 @@ class TextArea extends HTMLElement {
   private onScrollToLineEnd(event: CustomEvent) {}
 
   private async onKeyDown(event: KeyboardEvent) {
-    event.preventDefault();
+
+    if (event.currentTarget !== this) return;
 
     const selectionStart = this.selectionStart();
     const selectionEnd = this.selectionEnd();
