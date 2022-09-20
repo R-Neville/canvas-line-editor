@@ -330,6 +330,24 @@ class LineElement extends HTMLCanvasElement {
       },
     });
     this.dispatchEvent(customEvent);
+
+    const onClick = () => {
+      this.blur();
+      const customEvent = new CustomEvent("set-selection", {
+        bubbles: true,
+        detail: {
+          start: 0,
+          end: this._text.length,
+        },
+      });
+      this.dispatchEvent(customEvent);
+    };
+
+    this.addEventListener("click", onClick);
+
+    setTimeout(() => {
+      this.removeEventListener("click", onClick);
+    }, 500);
   }
 
   private onMouseDown() {
