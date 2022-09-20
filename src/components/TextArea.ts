@@ -273,6 +273,7 @@ class TextArea extends HTMLElement {
     this.clearSelection();
     const { textBeforeCaret, textAfterCaret, pair } = event.detail;
     const { line: lineIndex } = this._lineManager.caret;
+    this._lines[lineIndex] = textBeforeCaret;
     const newLineIndex = lineIndex + 1;
     let indentation = this.getIndentation(textBeforeCaret);
     if (pair && window.configManager.autoIndent) {
