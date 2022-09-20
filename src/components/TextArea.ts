@@ -515,6 +515,11 @@ class TextArea extends HTMLElement {
         break;
     }
 
+    if (event.ctrlKey && event.key === "a") {
+      this.selectAll();
+      return;
+    }
+
     if (event.ctrlKey && event.key === "c") {
       this.copySelectedText();
       return;
@@ -748,7 +753,6 @@ class TextArea extends HTMLElement {
         }
       });
 
-      console.log(firstLineTextAfter);
       const lastLineIndex = line + lines.length - 1;
       const newText = lines[lines.length - 1] + firstLineTextAfter;
       this.addLine(newText, lastLineIndex);
@@ -757,12 +761,21 @@ class TextArea extends HTMLElement {
       this._lineElements[lastLineIndex].update(newText);
       this._lineElements[lastLineIndex].focusAt(newCol);
     }
-
-    
   }
 
   private copyToClipboard(text: string) {
     window.navigator.clipboard.writeText(text);
+  }
+
+  private selectAll() {
+    const currentLine = this._lineElements[this._lineManager.caret.line];
+    currentLine.blur();
+    const lineCount = this._lineManager.currentLineCount;
+    this.setSelectionStart(0, 0);
+    this.setSelectionEnd(lineCount - 1, this._lines[lineCount - 1].length);
+    this._lineElements.forEach((lineElement) => {
+      lineElement.drawSelection(0, lineElement.text.length);
+    });
   }
 }
 
