@@ -9,6 +9,7 @@ class TextArea extends HTMLElement {
   private _lineElements: LineElement[];
   private _selecting: boolean;
   private _current: boolean;
+  private _focused: boolean;
 
   constructor() {
     super();
@@ -18,6 +19,7 @@ class TextArea extends HTMLElement {
     this._lineElements = [];
     this._selecting = false;
     this._current = false;
+    this._focused = false;
 
     applyStyles(this, {
       ...universalStyles,
@@ -69,7 +71,18 @@ class TextArea extends HTMLElement {
       "insert-text-requested",
       this.onInsertTextRequested as EventListener
     );
+    this.addEventListener(
+      "set-selection",
+      this.onSetSelection as EventListener
+    );
     document.addEventListener("keydown", this.onKeyDown.bind(this));
+    this.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this._focused = true;
+    });
+    document.addEventListener("click", (() => {
+      this._focused = false;
+    }).bind(this));
   }
 
   get selecting() {
@@ -489,14 +502,12 @@ class TextArea extends HTMLElement {
 
   private onScrollToLineEnd(event: CustomEvent) {}
 
-  private async onKeyDown(event: KeyboardEvent) {
-
-    if (event.currentTarget !== this) return;
+  private onKeyDown(event: KeyboardEvent) {
+    if (!this._focused) return;
+    if (!this._current) return;
 
     const selectionStart = this.selectionStart();
     const selectionEnd = this.selectionEnd();
-
-    if (!this._current) return;
 
     switch (event.key) {
       case "Backspace":
@@ -855,6 +866,14 @@ class TextArea extends HTMLElement {
         );
       });
     }
+  }
+
+  private onSetSelection(event: CustomEvent) {
+    const { start, end } = event.detail;
+    const lineIndex = this._lineElements.indexOf(event.target as LineElement);
+    this.setSelectionStart(lineIndex, start);
+    this.setSelectionEnd(lineIndex, end);
+    this._lineElements[lineIndex].drawSelection(start, end);
   }
 }
 
