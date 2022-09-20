@@ -111,6 +111,7 @@ class TextArea extends HTMLElement {
       this.appendChild(newLineElement);
     }
     this._lineManager.currentLineCount = this._lineManager.currentLineCount + 1;
+    this.dispatchLineCountChanged();
   }
 
   private buildLine(text: string) {
@@ -120,6 +121,7 @@ class TextArea extends HTMLElement {
 
   private setCaret(line: number, col: number) {
     this._lineManager.updateCaretPos(line, col);
+    this.dispatchSelectionChanged();
   }
 
   private selectionStart() {
@@ -227,7 +229,6 @@ class TextArea extends HTMLElement {
     const { colIndex } = event.detail;
     const lineIndex = this._lineElements.indexOf(lineElement);
     this.setCaret(lineIndex, colIndex);
-    this.dispatchSelectionChanged();
   }
 
   private onLineBlurred(event: CustomEvent) {
@@ -252,7 +253,6 @@ class TextArea extends HTMLElement {
     this._lines[lineIndex] = newValue;
     this.setCaret(lineIndex, newColIndex);
     this.dispatchContentChanged(lineIndex, false);
-    this.dispatchSelectionChanged();
   }
 
   private onNewLineRequested(event: CustomEvent) {
@@ -268,15 +268,12 @@ class TextArea extends HTMLElement {
       this.setCaret(newLineIndex, newColIndex);
       this.addLine(indentation + textAfterCaret, newLineIndex + 1);
       this._lineElements[newLineIndex].focusAt(newColIndex);
-      this.dispatchLineCountChanged(2);
     } else {
       this.addLine(indentation + textAfterCaret, newLineIndex);
       const newColIndex = indentation.length;
       this.setCaret(newLineIndex, newColIndex);
       this._lineElements[newLineIndex].focusAt(newColIndex);
-      this.dispatchLineCountChanged();
     }
-    this.dispatchSelectionChanged();
   }
 
   private onLineRemovalRequested(event: CustomEvent) {
@@ -305,7 +302,6 @@ class TextArea extends HTMLElement {
       setTimeout(() => {
         this.setCaret(newLineIndex, newColIndex || 0);
         previousLine.focusAt(newColIndex || 0);
-        this.dispatchSelectionChanged();
       });
     }
   }
@@ -323,7 +319,6 @@ class TextArea extends HTMLElement {
       }
       this.setCaret(newLineIndex, newColIndex);
       lineAbove.focusAt(newColIndex);
-      this.dispatchSelectionChanged();
     }
   }
 
@@ -340,7 +335,6 @@ class TextArea extends HTMLElement {
       }
       this.setCaret(newLineIndex, newColIndex);
       lineBelow.focusAt(newColIndex);
-      this.dispatchSelectionChanged();
     }
   }
 
@@ -353,7 +347,6 @@ class TextArea extends HTMLElement {
       const currentLine = this._lineElements[lineIndex];
       this.setCaret(lineIndex, newColIndex);
       currentLine.focusAt(newColIndex);
-      this.dispatchSelectionChanged();
     }
   }
 
@@ -366,7 +359,6 @@ class TextArea extends HTMLElement {
       const newColIndex = colIndex + 1;
       this.setCaret(lineIndex, newColIndex);
       currentLine.focusAt(newColIndex);
-      this.dispatchSelectionChanged();
     }
   }
 
@@ -516,9 +508,7 @@ class TextArea extends HTMLElement {
           this.addLine("", newIndex);
           this.setCaret(newIndex, 0);
           this._lineElements[newIndex].focusAt(0);
-          this.dispatchLineCountChanged();
           this.dispatchContentChanged(newIndex, false);
-          this.dispatchSelectionChanged();
         }
         return;
       default:
@@ -540,7 +530,6 @@ class TextArea extends HTMLElement {
       window.navigator.clipboard
         .readText()
         .then((text) => {
-          console.log(text);
           if (text.length > 0) {
             this.deleteSelectedText();
             this.pasteText(text);
@@ -617,9 +606,8 @@ class TextArea extends HTMLElement {
         const lastLineIndex = selectionEnd.line;
         const lastLine = this._lineElements[lastLineIndex];
         this.deleteTextFromLine(lastLineIndex, 0, selectionEnd.col);
-        if (lastLine.text.length === 0) {
-          this.removeLineAtIndex(lastLineIndex);
-        }
+        const remainingText = lastLine.text;
+        this.removeLineAtIndex(lastLineIndex);
         let i = lastLineIndex - 1;
         while (i > selectionStart.line) {
           this.removeLineAtIndex(i);
@@ -632,20 +620,17 @@ class TextArea extends HTMLElement {
           selectionStart.col,
           firstLine.text.length
         );
-        this.setCaret(
-          firstLineIndex,
-          this._lineElements[firstLineIndex].text.length
-        );
-        this._lineElements[firstLineIndex].focusAt(
-          this._lineElements[firstLineIndex].text.length
-        );
+        const newCol = firstLine.text.length;
+        this.setCaret(firstLineIndex, newCol);
+        this._lines[firstLineIndex] = firstLine.text + remainingText;
+        firstLine.update(firstLine.text + remainingText);
+        firstLine.focusAt(newCol);
       } else {
         const lastLineIndex = selectionStart.line;
         const lastLine = this._lineElements[lastLineIndex];
         this.deleteTextFromLine(lastLineIndex, 0, selectionStart.col);
-        if (lastLine.text.length === 0) {
-          this.removeLineAtIndex(lastLineIndex);
-        }
+        const remainingText = lastLine.text;
+        this.removeLineAtIndex(lastLineIndex);
         let i = lastLineIndex - 1;
         while (i > selectionEnd.line) {
           this.removeLineAtIndex(i);
@@ -658,13 +643,11 @@ class TextArea extends HTMLElement {
           selectionEnd.col,
           firstLine.text.length
         );
-        this.setCaret(
-          firstLineIndex,
-          this._lineElements[firstLineIndex].text.length
-        );
-        this._lineElements[firstLineIndex].focusAt(
-          this._lineElements[firstLineIndex].text.length
-        );
+        const newCol = firstLine.text.length;
+        this.setCaret(firstLineIndex, newCol);
+        this._lines[firstLineIndex] = firstLine.text + remainingText;
+        firstLine.update(firstLine.text + remainingText);
+        firstLine.focusAt(newCol);
       }
       this.setSelectionStart();
       this.setSelectionEnd();
@@ -683,7 +666,6 @@ class TextArea extends HTMLElement {
     lineAbove.focusAt(newColIndex || 0);
     this.dispatchLineCountChanged();
     this.dispatchContentChanged(newLineIndex, true);
-    this.dispatchSelectionChanged();
   }
 
   private copySelectedText() {
@@ -761,28 +743,22 @@ class TextArea extends HTMLElement {
         if (line + index === line) {
           return;
         }
-        if (line + index < line + lines.length - 1) {
+        if (index < lines.length - 1) {
           this.addLine(ln, line + index);
-        } 
+        }
       });
-      
+
+      console.log(firstLineTextAfter);
       const lastLineIndex = line + lines.length - 1;
-      
-      if (this._lines[lastLineIndex]) {
-        const newText = lines.slice(-1) + firstLineTextAfter;
-        this.addLine(newText, lastLineIndex);
-        const newCol = lines.slice(-1).length;
-        this.setCaret(lastLineIndex, newCol);
-        this._lineElements[lastLineIndex].focusAt(newCol);
-      }
+      const newText = lines[lines.length - 1] + firstLineTextAfter;
+      this.addLine(newText, lastLineIndex);
+      const newCol = lines[lines.length - 1].length;
+      this.setCaret(lastLineIndex, newCol);
+      this._lineElements[lastLineIndex].update(newText);
+      this._lineElements[lastLineIndex].focusAt(newCol);
     }
 
-    if (lines.length === 1) {
-      this.dispatchLineCountChanged();
-    } else {
-      this.dispatchLineCountChanged(lines.length - 1);
-    }
-    this.dispatchSelectionChanged();
+    
   }
 
   private copyToClipboard(text: string) {
