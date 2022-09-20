@@ -76,11 +76,11 @@ class TextArea extends HTMLElement {
       this.onSetSelection as EventListener
     );
     document.addEventListener("keydown", this.onKeyDown.bind(this));
-    this.addEventListener("click", (event) => {
+    this.addEventListener("mousedown", (event) => {
       event.stopPropagation();
       this._focused = true;
     });
-    document.addEventListener("click", (() => {
+    document.addEventListener("mousedown", (() => {
       this._focused = false;
     }).bind(this));
   }
@@ -527,6 +527,7 @@ class TextArea extends HTMLElement {
         }
         return;
       case "Tab":
+        event.preventDefault();
         if (event.shiftKey) {
           this.removeTabFromSelection();
         } else {
