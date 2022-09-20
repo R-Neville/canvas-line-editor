@@ -63,7 +63,7 @@ class LineElement extends HTMLCanvasElement {
     this.addEventListener("focus", this.onFocus);
     this.addEventListener("keydown", this.onKeyDown as EventListener);
     this.addEventListener("mousedown", this.onMouseDown);
-    this.addEventListener("click", this.onClick as EventListener);
+    this.addEventListener("dblclick", this.onDblClick as EventListener);
   }
 
   connectedCallback() {
@@ -319,8 +319,35 @@ class LineElement extends HTMLCanvasElement {
     }
   }
 
-  private onClick(event: MouseEvent) {
-    event.preventDefault();
+  private onDblClick(event: MouseEvent) {
+    const currentWordBounds = this.getCurrentWordBounds();
+    this.blur();
+    const customEvent = new CustomEvent("set-selection", {
+      bubbles: true,
+      detail: {
+        start: currentWordBounds.start,
+        end: currentWordBounds.end,
+      },
+    });
+    this.dispatchEvent(customEvent);
+
+    const onClick = () => {
+      this.blur();
+      const customEvent = new CustomEvent("set-selection", {
+        bubbles: true,
+        detail: {
+          start: 0,
+          end: this._text.length,
+        },
+      });
+      this.dispatchEvent(customEvent);
+    };
+
+    this.addEventListener("click", onClick);
+
+    setTimeout(() => {
+      this.removeEventListener("click", onClick);
+    }, 500);
   }
 
   private onMouseDown() {
@@ -492,6 +519,22 @@ class LineElement extends HTMLCanvasElement {
     this.setCaretPos(caretPos + 1);
     this.update(newText);
     this.dispatchLineChanged();
+  }
+
+  private getCurrentWordBounds() {
+    const text = this._text;
+    let start = this.getCaretPos();
+    while (text.charAt(start - 1) !== " " && start !== 0) {
+      start--;
+    }
+    let end = this.getCaretPos();
+    while (text.charAt(end) !== " " && end !== text.length) {
+      end++;
+    }
+    return {
+      start,
+      end,
+    };
   }
 }
 
